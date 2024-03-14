@@ -1,0 +1,14 @@
+cff-version: 1.2.0
+message: If you use this software, please cite it using the following DOI.
+title: Pricing structured products in Python Paris-Dauphine University Lecture.
+version: 0.2.1
+authors:
+  - name: Hugo SOLEAU
+    email: hugo.soleau@dauphine.eu
+  - name: Matthieu MONNOT
+    email: matthieu.monnot@dauphine.eu
+  - name: Naim LEHBIBEN
+    email: naim.lehbiben@dauphine.eu
+  - name: Baptiste ZLOCH
+    email: baptiste.zloch@dauphine.eu
+license: MIT

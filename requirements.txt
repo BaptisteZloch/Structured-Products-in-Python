@@ -1,0 +1,16 @@
+pandas
+numpy
+seaborn
+matplotlib
+bokeh
+tqdm
+scipy
+statsmodels
+ipykernel
+black
+openpyxl
+streamlit
+yfinance
+scikit-learn
+quant_invest_lab
+fastapi
