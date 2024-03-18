@@ -6,6 +6,7 @@ DayCountConvention = Literal["ACT/360", "ACT/365"]
 
 
 OptionType = Literal["call", "put"]
+BarrierType = Literal["KO", "KI"]
 
 
 class Maturity:

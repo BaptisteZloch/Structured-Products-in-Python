@@ -20,7 +20,7 @@ class VanillaOption(OptionBase):
             spot_price, strike_price, maturity, rate, volatility, option_type
         )
 
-    def compute_option_price(self):
+    def compute_price(self):
         if self._option_type == "call":
             return self._spot_price * norm.cdf(self._d1) - self._strike_price * np.exp(
                 -self._rate.get_rate() * self._maturity.maturity_in_years

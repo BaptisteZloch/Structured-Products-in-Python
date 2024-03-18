@@ -70,5 +70,5 @@ class OptionBase(ABC):
         return self._d2
 
     @abstractmethod
-    def compute_option_price(self):
+    def compute_price(self):
         pass
