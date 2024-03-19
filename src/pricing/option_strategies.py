@@ -102,3 +102,203 @@ class StrangleStrategy(OptionStrategy):
                 "call",
             ).compute_price()
         )
+
+
+class ButterflyStrategy(OptionStrategy):
+    def __init__(
+        self,
+        spot_price: float,
+        strike_price1: float,
+        strike_price2: float,
+        strike_price3: float,
+        maturity: Maturity,
+        rate: Rate,
+        volatility: Volatility,
+    ) -> None:
+        super().__init__(spot_price, maturity, rate, volatility)
+        assert (
+            strike_price1 < strike_price2 < strike_price3
+        ), "Error provide strike_price1 < strike_price2 < strike_price3."
+        self._strike_price1 = strike_price1
+        self._strike_price2 = strike_price2
+        self._strike_price3 = strike_price3
+
+    def compute_price(self) -> float:
+        return (
+            VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+            ).compute_price()
+            - 2 * VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+            ).compute_price()
+            + VanillaOption(
+                self._spot_price,
+                self._strike_price3,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+            ).compute_price()
+        )
+
+
+class CallSpreadStrategy(OptionStrategy):
+    def __init__(
+        self,
+        spot_price: float,
+        lower_strike: float,
+        upper_strike: float,
+        maturity: Maturity,
+        rate: Rate,
+        volatility: Volatility,
+    ) -> None:
+        super().__init__(spot_price, maturity, rate, volatility)
+        assert (
+            lower_strike < upper_strike
+        ), "Error: lower strike must be less than upper strike."
+        self._lower_strike = lower_strike
+        self._upper_strike = upper_strike
+
+    def compute_price(self) -> float:
+        return (
+            VanillaOption(
+                self._spot_price,
+                self._lower_strike,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+            ).compute_price()
+            - VanillaOption(
+                self._spot_price,
+                self._upper_strike,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+            ).compute_price()
+        )
+
+
+class PutSpreadStrategy(OptionStrategy):
+    def __init__(
+        self,
+        spot_price: float,
+        lower_strike: float,
+        upper_strike: float,
+        maturity: Maturity,
+        rate: Rate,
+        volatility: Volatility,
+    ) -> None:
+        super().__init__(spot_price, maturity, rate, volatility)
+        assert (
+            lower_strike < upper_strike
+        ), "Error: lower strike must be less than upper strike."
+        self._lower_strike = lower_strike
+        self._upper_strike = upper_strike
+
+    def compute_price(self) -> float:
+        return (
+            VanillaOption(
+                self._spot_price,
+                self._upper_strike,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+            ).compute_price()
+            - VanillaOption(
+                self._spot_price,
+                self._lower_strike,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+            ).compute_price()
+        )
+
+
+class StripStrategy(OptionStrategy):
+    def __init__(
+        self,
+        spot_price: float,
+        strike_price1: float,
+        strike_price2: float,
+        maturity: Maturity,
+        rate: Rate,
+        volatility: Volatility,
+    ) -> None:
+        super().__init__(spot_price, maturity, rate, volatility)
+        assert (
+            strike_price1 < strike_price2
+        ), "Error provide strike_price1 < strike_price2."
+        self._strike_price1 = strike_price1
+        self._strike_price2 = strike_price2
+
+    def compute_price(self) -> float:
+        return (
+            2 * VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+            ).compute_price()
+            - VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+            ).compute_price()
+        )
+
+
+class StrapStrategy(OptionStrategy):
+    def __init__(
+        self,
+        spot_price: float,
+        strike_price1: float,
+        strike_price2: float,
+        maturity: Maturity,
+        rate: Rate,
+        volatility: Volatility,
+    ) -> None:
+        super().__init__(spot_price, maturity, rate, volatility)
+        assert (
+            strike_price1 < strike_price2
+        ), "Error provide strike_price1 < strike_price2."
+        self._strike_price1 = strike_price1
+        self._strike_price2 = strike_price2
+
+    def compute_price(self) -> float:
+        return (
+            VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+            ).compute_price()
+            - 2 * VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+            ).compute_price()
+        )
