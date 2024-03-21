@@ -72,3 +72,7 @@ class OptionBase(ABC):
     @abstractmethod
     def compute_price(self):
         pass
+    
+    @abstractmethod
+    def compute_greeks(self):
+        pass

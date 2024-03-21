@@ -16,7 +16,7 @@ class PricingService:
         product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
         product_dict["volatility"] = Volatility(volatility=product_dict["volatility"])
         opt = BinaryOption(**product_dict)
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_vanilla_options(pydantic_model: BaseModel) -> Dict[str, float]:
@@ -26,4 +26,4 @@ class PricingService:
         product_dict["volatility"] = Volatility(volatility=product_dict["volatility"])
         opt = VanillaOption(**product_dict)
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())

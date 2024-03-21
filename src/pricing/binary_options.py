@@ -31,3 +31,12 @@ class BinaryOption(OptionBase):
             ) * norm.cdf(-self._d2)
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
