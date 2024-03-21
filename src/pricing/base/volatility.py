@@ -41,19 +41,27 @@ class Volatility:
     
     def print_surface(
         self,
+        n_points: Optional[int] = None,
+        colour: Optional[str] = None
     ) -> None:
         if self.__interpol is not None:
             stpr, mat = self.__interpol.get_knots()
             
-            strike_prices = np.linspace(min(stpr), max(stpr), 100)
-            maturities = np.linspace(min(mat), max(mat), 100)
+            if n_points is None:
+                n_points = 100
+                
+            strike_prices = np.linspace(min(stpr), max(stpr), n_points)
+            maturities = np.linspace(min(mat), max(mat), n_points)
             K, T = np.meshgrid(strike_prices, maturities)
             
             S = self.__interpol(strike_prices, maturities)
             
+            if colour is None :
+                colour = "viridis"
+                
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-            ax.plot_surface(K, T, S, cmap='viridis')
+            ax.plot_surface(K, T, S, cmap=colour)
             ax.set_xlabel('Strike Price')
             ax.set_ylabel('Maturity')
             ax.set_zlabel('Volatility')
