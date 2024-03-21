@@ -65,6 +65,11 @@ def collect_rate_data():
     return rate_matrix
 
 
+def show_greeks(greeks):
+    greeks_df = pd.DataFrame.from_dict(greeks, orient="index", columns=["Value"])
+    st.write(greeks_df)
+
+
 def show_homepage():
     st.title("Modélisation et Pricing de produits structurés")
     st.markdown("""
@@ -106,20 +111,43 @@ def show_option_pricing():
     strike = st.number_input("Strike Price", value=100.0)
     opt_type = st.selectbox("Option Type", ["call", "put"])
 
-    if st.button("Price"):
-        with st.spinner("Calculating..."):
-            time.sleep(2)  # Simuler un calcul long (2 secondes)
-            maturity = Maturity(start_date=today, end_date=maturity_datetime)
-            rate = Rate(rate)
-            volatility = Volatility(volatility)
+    maturity = Maturity(start_date=today, end_date=maturity_datetime)
+    rate = Rate(rate)
+    volatility = Volatility(volatility)
 
-            if option_type == "Vanilla Option":
-                strategy = VanillaOption(spot_price, strike, maturity, rate, volatility, opt_type)
-            elif option_type == "Binary Option":
-                strategy = BinaryOption(spot_price, strike, maturity, rate, volatility, opt_type)
+    col1, col2, col3 = st.columns(3)
 
-            option_price = strategy.compute_price()
-            st.success(f"Option Price: {option_price:.2f} EUR")
+    with col1:
+        if st.button("Price"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)  # Simuler un calcul long (2 secondes)
+
+                if option_type == "Vanilla Option":
+                    strategy = VanillaOption(spot_price, strike, maturity, rate, volatility, opt_type)
+                elif option_type == "Binary Option":
+                    strategy = BinaryOption(spot_price, strike, maturity, rate, volatility, opt_type)
+
+                option_price = strategy.compute_price()
+                st.success(f"Option Price: {option_price:.2f} EUR")
+
+    with col2:
+        if st.button("Greeks"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+
+                if option_type == "Vanilla Option":
+                    strategy = VanillaOption(spot_price, strike, maturity, rate, volatility, opt_type)
+                elif option_type == "Binary Option":
+                    strategy = BinaryOption(spot_price, strike, maturity, rate, volatility, opt_type)
+
+                greeks = strategy.compute_greeks()
+                st.success(f"Greeks : {show_greeks(greeks)}")
+
+    with col3:
+        if st.button("Proba d'exercice"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+                st.success("Pobabilité : 0.5")
 
 
 def show_fixed_income_pricing():
@@ -138,30 +166,46 @@ def show_fixed_income_pricing():
     else:
         rate_matrix = collect_rate_data()
 
-    volatility_choice = st.selectbox("Volatility Input", ["Single Value", "Volatility Surface"])
-    if volatility_choice == "Single Value":
-        volatility = st.number_input("Volatility", value=0.20)
-    else:
-        volatility_matrix = collect_volatility_data()
-
     if option_type == "Bond":
         coupon_rate = st.number_input("Coupon Rate", value=0.05)
         nb_coupon = st.number_input("Nb coupons", value=10)
 
-    if st.button("Price"):
-        with st.spinner("Calculating..."):
-            time.sleep(2)  # Simuler un calcul long (2 secondes)
-            maturity = Maturity(start_date=today, end_date=maturity_datetime)
-            rate = Rate(rate)
-            volatility = Volatility(volatility)
+    maturity = Maturity(start_date=today, end_date=maturity_datetime)
+    rate = Rate(rate)
 
-            if option_type == "Zero Coupon Bond":
-                strategy = ZeroCouponBond(rate, maturity, spot_price)
-            elif option_type == "Bond":
-                strategy = Bond(rate, maturity, spot_price, coupon_rate, nb_coupon)
+    col1, col2, col3 = st.columns(3)
 
-            option_price = strategy.compute_price()
-            st.success(f"Option Price: {option_price:.2f} EUR")
+    with col1:
+        if st.button("Price"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+
+                if option_type == "Zero Coupon Bond":
+                    strategy = ZeroCouponBond(rate, maturity, spot_price)
+                elif option_type == "Bond":
+                    strategy = Bond(rate, maturity, spot_price, coupon_rate, nb_coupon)
+
+                option_price = strategy.compute_price()
+                st.success(f"Option Price: {option_price:.2f} EUR")
+
+    with col2:
+        if st.button("Greeks"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+
+                if option_type == "Zero Coupon Bond":
+                    strategy = ZeroCouponBond(rate, maturity, spot_price)
+                elif option_type == "Bond":
+                    strategy = Bond(rate, maturity, spot_price, coupon_rate, nb_coupon)
+
+                greeks = strategy.compute_greeks()
+                st.success(f"Greeks : {show_greeks(greeks)}")
+
+    with col3:
+        if st.button("Proba d'exercice"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+                st.success("Pobabilité : 0.5")
 
 
 def show_exo_product_pricing():
@@ -202,32 +246,67 @@ def show_exo_product_pricing():
         lower_strike = st.number_input("Lower Strike", value=90.0)
         upper_strike = st.number_input("Upper Strike", value=110.0)
 
-    if st.button("Price"):
-        with st.spinner("Calculating..."):
-            time.sleep(2)  # Simuler un calcul long (2 secondes)
-            maturity = Maturity(start_date=today, end_date=maturity_datetime)
-            rate = Rate(rate)
-            volatility = Volatility(volatility)
+    maturity = Maturity(start_date=today, end_date=maturity_datetime)
+    rate = Rate(rate)
+    volatility = Volatility(volatility)
 
-            if option_type == "Barrier Option":
-                strategy = BarrierOption(spot_price, strike, maturity, rate, volatility, opt_type, barrier_level, barrier_type)
-            elif option_type == "Straddle Strategy":
-                strategy = StraddleStrategy(spot_price, strike, maturity, rate, volatility)
-            elif option_type == "Strangle Strategy":
-                strategy = StrangleStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
-            elif option_type == "Butterfly":
-                strategy = ButterflyStrategy(spot_price, strike_price1, strike_price2, strike_price3, maturity, rate, volatility)
-            elif option_type == "Call Spread":
-                strategy = CallSpreadStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
-            elif option_type == "Put Spread":
-                strategy = PutSpreadStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
-            elif option_type == "Strip":
-                strategy = StripStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
-            elif option_type == "Strap":
-                strategy = StrapStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+    col1, col2, col3 = st.columns(3)
 
-            option_price = strategy.compute_price()
-            st.success(f"Option Price: {option_price:.2f} EUR")
+    with col1:
+        if st.button("Price"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+
+                if option_type == "Barrier Option":
+                    strategy = BarrierOption(spot_price, strike, maturity, rate, volatility, opt_type, barrier_level, barrier_type)
+                elif option_type == "Straddle Strategy":
+                    strategy = StraddleStrategy(spot_price, strike, maturity, rate, volatility)
+                elif option_type == "Strangle Strategy":
+                    strategy = StrangleStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Butterfly":
+                    strategy = ButterflyStrategy(spot_price, strike_price1, strike_price2, strike_price3, maturity, rate, volatility)
+                elif option_type == "Call Spread":
+                    strategy = CallSpreadStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Put Spread":
+                    strategy = PutSpreadStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Strip":
+                    strategy = StripStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Strap":
+                    strategy = StrapStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+
+                option_price = strategy.compute_price()
+                st.success(f"Option Price: {option_price:.2f} EUR")
+
+    with col2:
+        if st.button("Greeks"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+
+                if option_type == "Barrier Option":
+                    strategy = BarrierOption(spot_price, strike, maturity, rate, volatility, opt_type, barrier_level, barrier_type)
+                elif option_type == "Straddle Strategy":
+                    strategy = StraddleStrategy(spot_price, strike, maturity, rate, volatility)
+                elif option_type == "Strangle Strategy":
+                    strategy = StrangleStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Butterfly":
+                    strategy = ButterflyStrategy(spot_price, strike_price1, strike_price2, strike_price3, maturity, rate, volatility)
+                elif option_type == "Call Spread":
+                    strategy = CallSpreadStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Put Spread":
+                    strategy = PutSpreadStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Strip":
+                    strategy = StripStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+                elif option_type == "Strap":
+                    strategy = StrapStrategy(spot_price, lower_strike, upper_strike, maturity, rate, volatility)
+
+                greeks = strategy.compute_greeks()
+                st.success(f"Greeks : {show_greeks(greeks)}")
+
+    with col3:
+        if st.button("Proba d'exercice"):
+            with st.spinner("Calculating..."):
+                time.sleep(2)
+                st.success("Pobabilité : 0.5")
 
 
 def main():
