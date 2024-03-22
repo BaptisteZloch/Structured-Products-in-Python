@@ -10,8 +10,8 @@ RUN apt-get update
 WORKDIR /usr/src/app
 
 # Update python tools OLD WAY
-RUN pip install --upgrade pip setuptools wheel cpython
-
+RUN pip install --upgrade pip
+# RUN pip install -U wheel setuptools cpython
 # Add the project to the WORKDIR
 COPY . .
 
