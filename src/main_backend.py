@@ -1,6 +1,7 @@
 from typing import Dict, Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import RedirectResponse
 from src.services.pricing_service import PricingService
 from src.utility.schema import (
     BarrierOptionBaseModel,
@@ -9,17 +10,25 @@ from src.utility.schema import (
     ButterflyStrategyBaseModel,
     CallSpreadStrategyBaseModel,
     OptionBaseModel,
+    OutperformerCertificateBaseModel,
     PutSpreadStrategyBaseModel,
+    ReverseConvertibleBaseModel,
     StraddleStrategyBaseModel,
     StrangleStrategyBaseModel,
     StrapStrategyBaseModel,
     StripStrategyBaseModel,
     ZeroCouponBondBaseModel,
 )
-from src.utility.types import BondType, OptionKindType, OptionStrategyType
+from src.utility.types import (
+    BondType,
+    OptionKindType,
+    OptionStrategyType,
+    ProductKindType,
+)
 
 app = FastAPI()
 
+# AVAILABLE at:  https://structured-pricing-api-dauphine.koyeb.app/docs
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -32,8 +41,32 @@ app.add_middleware(
 )
 
 
+@app.post("/api/v1/price/structured-product/{product_kind}")
+def structured_product_pricing(
+    product_kind: ProductKindType,
+    product: Union[ReverseConvertibleBaseModel, OutperformerCertificateBaseModel],
+    pricing_service: PricingService = Depends(PricingService),
+) -> Dict[str, float]:
+    try:
+        if product_kind == "reverse-convertible" and isinstance(
+            product, ReverseConvertibleBaseModel
+        ):
+            return pricing_service.process_reverse_convertible_structured_product(
+                product
+            )
+        if product_kind == "outperformer-certificate" and isinstance(
+            product, OutperformerCertificateBaseModel
+        ):
+            return pricing_service.process_outperformer_certificate_structured_product(
+                product
+            )
+        raise ValueError("Provide valid input.")
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"{e}") from e
+
+
 @app.post("/api/v1/price/option/{option_kind}")
-def binary_option_pricing(
+def option_pricing(
     option_kind: OptionKindType,
     product: Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel],
     pricing_service: PricingService = Depends(PricingService),
@@ -62,6 +95,7 @@ def binary_option_pricing(
     Returns:
         Dict[str, float]: _description_
     """
+    print(product)
     try:
         if option_kind == "binary" and isinstance(product, BinaryOptionBaseModel):
             return pricing_service.process_binary_options(product)
@@ -72,9 +106,6 @@ def binary_option_pricing(
         raise ValueError("Provide valid input.")
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"{e}") from e
-
-
-# https://structured-pricing-api-dauphine.koyeb.app/docs
 
 
 @app.post("/api/v1/price/option-strategy/{option_strategy}")
@@ -183,9 +214,7 @@ def bond_pricing(
 @app.get("/")
 def base_url():
     try:
-        return {
-            "message": "success ! The available routes are : `/api/v1/price/option/vanilla` and `/api/v1/price/option/binary`"
-        }
+        return RedirectResponse("/docs")
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"{e}") from e
 
