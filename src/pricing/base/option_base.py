@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
+from tqdm import tqdm
 
 from src.pricing.base.volatility import Volatility
 from src.pricing.base.rate import Rate
@@ -115,7 +116,7 @@ class OptionBase(ABC):
         paths = np.zeros((num_paths, num_steps + 1))
         paths[:, 0] = self._spot_price
 
-        for step in range(1, num_steps + 1):
+        for step in tqdm(range(1, num_steps + 1),desc="Computing steps...",leave=False):
             random_shocks = np.random.normal(0, 1, num_paths)
             paths[:, step] = paths[:, step - 1] * np.exp(nudt + volsdt * random_shocks)
         return paths

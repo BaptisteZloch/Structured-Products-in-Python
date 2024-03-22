@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.stats import norm
+from tqdm import tqdm
 from src.pricing.base.option_base import OptionBase
 from src.pricing.base.rate import Rate
 from src.pricing.base.volatility import Volatility
@@ -31,7 +32,7 @@ class BarrierOption(OptionBase):
         paths = self.monte_carlo_simulation(num_paths=num_paths, num_steps=num_steps)
         payoffs = []
 
-        for path in paths:
+        for path in tqdm(paths, desc="Computing paths...", leave=False):
             barrier_crossed = (
                 np.any(path >= self._barrier_level)
                 if self._barrier_direction == "up"
