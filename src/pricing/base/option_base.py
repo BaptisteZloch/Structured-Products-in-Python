@@ -23,7 +23,6 @@ class OptionBase(ABC):
         self._rate = rate
         self._volatility = volatility
         self._option_type = option_type
-
         self._d1 = self.__d1_func()
         self._d2 = self.__d2_func()
 
@@ -36,10 +35,20 @@ class OptionBase(ABC):
         """
         return (
             np.log(self._spot_price / self._strike_price)
-            + (self._rate.get_rate() + 0.5 * self._volatility.get_volatility() ** 2)
+            + (
+                self._rate.get_rate(self._maturity)
+                + 0.5
+                * self._volatility.get_volatility(
+                    self._strike_price / self._spot_price,
+                    self._maturity.maturity_in_years,
+                )
+                ** 2
+            )
             * self._maturity.maturity_in_years
         ) / (
-            self._volatility.get_volatility()
+            self._volatility.get_volatility(
+                self._strike_price / self._spot_price, self._maturity.maturity_in_years
+            )
             * np.sqrt(self._maturity.maturity_in_years)
         )
 
@@ -52,12 +61,24 @@ class OptionBase(ABC):
 
         return (
             np.log(self._spot_price / self._strike_price)
-            + (self._rate.get_rate() + 0.5 * self._volatility.get_volatility() ** 2)
+            + (
+                self._rate.get_rate(self._maturity)
+                + 0.5
+                * self._volatility.get_volatility(
+                    self._strike_price / self._spot_price,
+                    self._maturity.maturity_in_years,
+                )
+                ** 2
+            )
             * self._maturity.maturity_in_years
         ) / (
-            self._volatility.get_volatility()
+            self._volatility.get_volatility(
+                self._strike_price / self._spot_price, self._maturity.maturity_in_years
+            )
             * np.sqrt(self._maturity.maturity_in_years)
-        ) - self._volatility.get_volatility() * np.sqrt(
+        ) - self._volatility.get_volatility(
+            self._strike_price / self._spot_price, self._maturity.maturity_in_years
+        ) * np.sqrt(
             self._maturity.maturity_in_years
         )
 
@@ -76,3 +97,13 @@ class OptionBase(ABC):
     @abstractmethod
     def compute_greeks(self):
         pass
+
+    def __str__(self) -> str:
+        """
+        Provides a human-readable string representation of the OptionBase object.
+
+        Returns:
+            str: A string representation of the option including spot price, strike price,
+                maturity, option type, and volatility.
+        """
+        return f"Option<Spot Price={self._spot_price:.2f}, Strike Price={self._strike_price:.2f}, Maturity={self._maturity}, Option Type={self._option_type}, Volatility={self._volatility}>"

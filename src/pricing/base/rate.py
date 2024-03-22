@@ -31,7 +31,7 @@ class Rate:
     def get_rate(self, maturity: Optional[Maturity] = None) -> float:
         if self.__rate is not None:
             return self.__rate
-        if Maturity is not None:
+        if maturity is not None:
             return float(self.__interpol(maturity.maturity_in_years))
         raise ValueError("Error, provide a valid maturity or a rate attribute.")
 

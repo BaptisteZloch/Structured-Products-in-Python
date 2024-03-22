@@ -38,6 +38,7 @@ class Maturity:
             end_date (Optional[datetime], optional): _description_. Defaults to None.
             day_count_convention (Literal[&quot;ACT, optional): _description_. Defaults to "ACT/360".
         """
+        self.__day_count_convention = day_count_convention
         if maturity_in_years is not None:
             self.__maturity_in_years = maturity_in_years
         elif maturity_in_days is not None:
@@ -56,3 +57,13 @@ class Maturity:
     @property
     def maturity_in_years(self) -> float:
         return self.__maturity_in_years
+
+    def __str__(self) -> str:
+        """
+        Provides a human-readable string representation of the Maturity object.
+
+        Returns:
+            str: A string representation of the maturity including its value in years
+                and the day count convention used.
+        """
+        return f"Maturity<__maturity_in_years={self.maturity_in_years:.4f}, __day_count_convention={self.__day_count_convention}>"

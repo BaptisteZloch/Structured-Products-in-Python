@@ -23,11 +23,11 @@ class BinaryOption(OptionBase):
     def compute_price(self) -> float:
         if self._option_type == "call":
             return np.exp(
-                -self._rate.get_rate() * self._maturity.maturity_in_years
+                -self._rate.get_rate(self._maturity) * self._maturity.maturity_in_years
             ) * norm.cdf(self._d2)
         elif self._option_type == "put":
             return np.exp(
-                -self._rate.get_rate() * self._maturity.maturity_in_years
+                -self._rate.get_rate(self._maturity) * self._maturity.maturity_in_years
             ) * norm.cdf(-self._d2)
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
