@@ -22,7 +22,7 @@ class OptionStrategy(ABC):
         self._dividend = dividend if dividend is not None else 0.0
 
     @abstractmethod
-    def compute_price(self):
+    def compute_greeks(self):
         pass
 
 
@@ -60,6 +60,15 @@ class StraddleStrategy(OptionStrategy):
                 self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class StrangleStrategy(OptionStrategy):
@@ -111,6 +120,15 @@ class StrangleStrategy(OptionStrategy):
                 self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class ButterflyStrategy(OptionStrategy):
@@ -165,6 +183,15 @@ class ButterflyStrategy(OptionStrategy):
             ).compute_price()
         )
 
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
+
 
 class CallSpreadStrategy(OptionStrategy):
     def __init__(
@@ -205,6 +232,15 @@ class CallSpreadStrategy(OptionStrategy):
                 self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class PutSpreadStrategy(OptionStrategy):
@@ -247,6 +283,15 @@ class PutSpreadStrategy(OptionStrategy):
             ).compute_price()
         )
 
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
+
 
 class StripStrategy(OptionStrategy):
     def __init__(
@@ -287,6 +332,15 @@ class StripStrategy(OptionStrategy):
                 self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class StrapStrategy(OptionStrategy):
@@ -329,3 +383,12 @@ class StrapStrategy(OptionStrategy):
                 self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
