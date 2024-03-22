@@ -1,6 +1,7 @@
 from typing import Dict, Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Depends
+from fastapi.responses import RedirectResponse
 from src.services.pricing_service import PricingService
 from src.utility.schema import (
     BarrierOptionBaseModel,
@@ -20,6 +21,7 @@ from src.utility.types import BondType, OptionKindType, OptionStrategyType
 
 app = FastAPI()
 
+# AVAILABLE at:  https://structured-pricing-api-dauphine.koyeb.app/docs
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -72,9 +74,6 @@ def binary_option_pricing(
         raise ValueError("Provide valid input.")
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"{e}") from e
-
-
-# https://structured-pricing-api-dauphine.koyeb.app/docs
 
 
 @app.post("/api/v1/price/option-strategy/{option_strategy}")
@@ -183,9 +182,7 @@ def bond_pricing(
 @app.get("/")
 def base_url():
     try:
-        return {
-            "message": "success ! The available routes are : `/api/v1/price/option/vanilla` and `/api/v1/price/option/binary`"
-        }
+        return RedirectResponse("/docs")
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"{e}") from e
 
