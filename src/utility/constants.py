@@ -1,0 +1,1 @@
+EPSILON = 1e-4  # Choix d'un epsilon pour le calcul des greques des options barrières

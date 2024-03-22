@@ -27,7 +27,6 @@ class OptionBase(ABC):
         self._d1 = self.__d1_func()
         self._d2 = self.__d2_func()
 
-    # we first calculate d1 and d2
     def __d1_func(self) -> float:
         """Compute d1 of the Black-Scholes formula.
 
@@ -76,3 +75,16 @@ class OptionBase(ABC):
     @abstractmethod
     def compute_greeks(self):
         pass
+    
+    def monte_carlo_simulation(self, num_paths, num_steps):
+    
+        dt = self._maturity.maturity_in_years / num_steps
+        nudt = (self._rate.get_rate() - 0.5 * self._volatility.get_volatility()**2) * dt
+        volsdt = self._volatility.get_volatility() * np.sqrt(dt)
+        paths = np.zeros((num_paths, num_steps + 1))
+        paths[:, 0] = self._spot_price
+
+        for step in range(1, num_steps + 1):
+            random_shocks = np.random.normal(0, 1, num_paths)
+            paths[:, step] = paths[:, step - 1] * np.exp(nudt + volsdt * random_shocks)
+        return paths
