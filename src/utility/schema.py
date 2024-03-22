@@ -1,3 +1,4 @@
+from typing import Dict, Optional
 from pydantic import BaseModel, Field
 
 from src.utility.types import BarrierType, OptionType
@@ -5,28 +6,25 @@ from src.utility.types import BarrierType, OptionType
 
 class OptionBaseModel(BaseModel):
     spot_price: float = Field(..., description="Spot price of the underlying")
-    strike_price: float
-    maturity: float
-    rate: float
+    strike_price: float = Field(..., description="Spot price of the underlying")
+    maturity: float = Field(..., description="Maturity in years")
+    rate: Optional[float] = Field(default=None, description="Interest rates")
+    rate_curve: Optional[Dict[str, float]] = Field(
+        default=None,
+        description="Interest rates curve dictionary maturity as keys and rates as values",
+    )
     volatility: float
     option_type: OptionType
+
+
+# class RateCurveBaseModel(BaseModel):
 
 
 class BinaryOptionBaseModel(OptionBaseModel):
-    spot_price: float = Field(..., description="Spot price of the underlying")
-    strike_price: float = Field(..., description="Spot price of the underlying")
-    maturity: float = Field(..., description="Maturity in years")
-    rate: float = Field(..., description="Interest rates")
-    volatility: float
-    option_type: OptionType
+    pass
 
 
 class BarrierOptionBaseModel(OptionBaseModel):
-    spot_price: float = Field(..., description="Spot price of the underlying")
-    strike_price: float = Field(..., description="Strike price")
-    maturity: float = Field(..., description="Maturity in years")
-    rate: float = Field(..., description="Interest rates")
-    volatility: float = Field(..., description="Implied volatility")
     option_type: OptionType
     barrier_level: float
     barrier_type: BarrierType

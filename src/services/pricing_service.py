@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Any, Dict
 from pydantic import BaseModel
 
 from src.pricing.structured_products import OutperformerCertificate, ReverseConvertible
@@ -37,6 +37,21 @@ from src.utility.types import Maturity
 
 class PricingService:
     @staticmethod
+    def __handle_rate_and_rate_curve_base_model(base_model_dict: Dict[str, Any]):
+        if base_model_dict["rate"] is not None:
+            base_model_dict["rate"] = Rate(rate=base_model_dict["rate"])
+        elif base_model_dict["rate_curve"] is not None:
+            base_model_dict["rate_curve"] = Rate(
+                rate_curve={
+                    Maturity(float(maturity_string)): rates
+                    for maturity_string, rates in base_model_dict["rate_curve"].items()
+                }
+            )
+        else:
+            raise ValueError("Error, provide either rate or rate_curve argument")
+        return base_model_dict
+
+    @staticmethod
     def process_outperformer_certificate_structured_product(
         request_received_model: OutperformerCertificateBaseModel,
     ) -> Dict[str, float]:
@@ -57,7 +72,10 @@ class PricingService:
         request_received_model: BinaryOptionBaseModel,
     ) -> Dict[str, float]:
         product_dict = request_received_model.model_dump(exclude_unset=True)
-        product_dict["rate"] = Rate(rate=product_dict["rate"])
+        product_dict = PricingService.__handle_rate_and_rate_curve_base_model(
+            product_dict
+        )
+        # product_dict["rate"] = Rate(rate=product_dict["rate"])
         product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
         product_dict["volatility"] = Volatility(volatility=product_dict["volatility"])
         opt = BinaryOption(**product_dict)

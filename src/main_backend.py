@@ -66,7 +66,7 @@ def structured_product_pricing(
 
 
 @app.post("/api/v1/price/option/{option_kind}")
-def binary_option_pricing(
+def option_pricing(
     option_kind: OptionKindType,
     product: Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel],
     pricing_service: PricingService = Depends(PricingService),
@@ -95,6 +95,7 @@ def binary_option_pricing(
     Returns:
         Dict[str, float]: _description_
     """
+    print(product)
     try:
         if option_kind == "binary" and isinstance(product, BinaryOptionBaseModel):
             return pricing_service.process_binary_options(product)
