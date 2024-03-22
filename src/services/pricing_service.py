@@ -1,6 +1,7 @@
 from typing import Dict
 from pydantic import BaseModel
 
+from pricing.barrier_options import BarrierOption
 from pricing.base.rate import Rate
 from pricing.base.volatility import Volatility
 from pricing.binary_options import BinaryOption
@@ -16,8 +17,11 @@ from pricing.option_strategies import (
 )
 from pricing.vanilla_options import VanillaOption
 from utility.schema import (
+    BarrierOptionBaseModel,
+    BinaryOptionBaseModel,
     ButterflyStrategyBaseModel,
     CallSpreadStrategyBaseModel,
+    OptionBaseModel,
     PutSpreadStrategyBaseModel,
     StraddleStrategyBaseModel,
     StrangleStrategyBaseModel,
@@ -30,7 +34,9 @@ from utility.types import Maturity
 
 class PricingService:
     @staticmethod
-    def process_binary_options(request_received_model: BaseModel) -> Dict[str, float]:
+    def process_binary_options(
+        request_received_model: BinaryOptionBaseModel,
+    ) -> Dict[str, float]:
         product_dict = request_received_model.model_dump(exclude_unset=True)
         product_dict["rate"] = Rate(rate=product_dict["rate"])
         product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
@@ -39,7 +45,9 @@ class PricingService:
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
-    def process_vanilla_options(request_received_model: BaseModel) -> Dict[str, float]:
+    def process_vanilla_options(
+        request_received_model: OptionBaseModel,
+    ) -> Dict[str, float]:
         product_dict = request_received_model.model_dump(exclude_unset=True)
         product_dict["rate"] = Rate(rate=product_dict["rate"])
         product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
@@ -47,6 +55,18 @@ class PricingService:
         opt = VanillaOption(**product_dict)
 
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
+
+    @staticmethod
+    def process_barrier_options(
+        request_received_model: BarrierOptionBaseModel,
+    ) -> Dict[str, float]:
+        product_dict = request_received_model.model_dump(exclude_unset=True)
+        product_dict["rate"] = Rate(rate=product_dict["rate"])
+        product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
+        product_dict["volatility"] = Volatility(volatility=product_dict["volatility"])
+        opt = BarrierOption(**product_dict)
+
+        return {"price": opt.compute_price()}
 
     @staticmethod
     def process_vanilla_bond(request_received_model: BaseModel) -> Dict[str, float]:

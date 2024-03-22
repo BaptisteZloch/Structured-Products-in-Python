@@ -8,6 +8,7 @@ import uvicorn
 
 from services.pricing_service import PricingService
 from utility.schema import (
+    BarrierOptionBaseModel,
     BinaryOptionBaseModel,
     BondBaseModel,
     ButterflyStrategyBaseModel,
@@ -97,6 +98,17 @@ def vanilla_option_pricing(
     """
     try:
         return pricing_service.process_vanilla_options(product)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"{e}") from e
+
+
+@app.post("/api/v1/price/option/barrier")
+def process_barrier_options(
+    product: BarrierOptionBaseModel,
+    pricing_service: PricingService = Depends(PricingService),
+) -> Dict[str, float]:
+    try:
+        return pricing_service.process_barrier_options(product)
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"{e}") from e
 

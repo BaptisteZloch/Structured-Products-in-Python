@@ -51,3 +51,12 @@ class BarrierOption(OptionBase):
             pass
         else:
             raise ValueError("Option type or barrier type not supported.")
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }

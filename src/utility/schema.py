@@ -1,6 +1,6 @@
 from pydantic import BaseModel, Field
 
-from utility.types import OptionType
+from utility.types import BarrierType, OptionType
 
 
 class OptionBaseModel(BaseModel):
@@ -19,6 +19,17 @@ class BinaryOptionBaseModel(OptionBaseModel):
     rate: float
     volatility: float
     option_type: OptionType
+
+
+class BarrierOptionBaseModel(OptionBaseModel):
+    spot_price: float = Field(..., description="Spot price of the underlying")
+    strike_price: float
+    maturity: float
+    rate: float
+    volatility: float
+    option_type: OptionType
+    barrier_level: float
+    barrier_type: BarrierType
 
 
 class OptionStrategyBaseModel(BaseModel):
