@@ -12,7 +12,7 @@ from pricing.binary_options import BinaryOption
 from pricing.option_strategies import StraddleStrategy, StrangleStrategy, ButterflyStrategy, CallSpreadStrategy, PutSpreadStrategy, StripStrategy, StrapStrategy
 from utility.types import Maturity
 
-
+#Salut
 # Couleurs personnalisées
 background_color = "#f0f0f0"
 button_color = "#4CAF50"
