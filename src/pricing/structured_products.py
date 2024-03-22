@@ -43,9 +43,9 @@ class ReverseConvertible(StructuredProductBase):
             "put"
             )
         
-        self.__price = self.__converse_rate * bond.compute_price() + (1-self.__converse_rate) * option.compute_price()
+        self._price = self.__converse_rate * bond.compute_price() + (1-self.__converse_rate) * option.compute_price()
         
-        return self.__price
+        return self._price
 
 
     def compute_greeks(self) -> Dict[str, float]:
