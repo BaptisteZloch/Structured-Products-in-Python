@@ -3,8 +3,8 @@ from logging import warn
 from typing import Dict, List, Optional, Union, Callable, Any
 from scipy.optimize import minimize
 
-from pricing.base.rate import Rate
-from utility.types import Maturity
+from src.pricing.base.rate import Rate
+from src.utility.types import Maturity
 
 
 class ABCBond(ABC):

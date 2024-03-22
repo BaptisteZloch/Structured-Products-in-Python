@@ -2,7 +2,7 @@ import math
 from typing import Dict, List, Literal, Optional
 from scipy import interpolate
 
-from utility.types import Maturity
+from src.utility.types import Maturity
 
 
 class Rate:
