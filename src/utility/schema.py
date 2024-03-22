@@ -20,3 +20,14 @@ class BinaryOptionBaseModel(OptionBaseModel):
     rate: float
     volatility: float
     option_type: OptionType
+
+
+class ZeroCouponBondBaseModel(BaseModel):
+    rate: float
+    maturity: float
+    nominal: int
+
+
+class BondBaseModel(ZeroCouponBondBaseModel):
+    coupon_rate: float
+    nb_coupon: int
