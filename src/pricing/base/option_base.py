@@ -2,9 +2,9 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from pricing.base.volatility import Volatility
-from pricing.base.rate import Rate
-from utility.types import OptionType, Maturity
+from src.pricing.base.volatility import Volatility
+from src.pricing.base.rate import Rate
+from src.utility.types import OptionType, Maturity
 
 
 class OptionBase(ABC):
@@ -72,7 +72,7 @@ class OptionBase(ABC):
     @abstractmethod
     def compute_price(self):
         pass
-    
+
     @abstractmethod
     def compute_greeks(self):
         pass

@@ -6,8 +6,8 @@ from fastapi import FastAPI, HTTPException, Depends
 
 import uvicorn
 
-from services.pricing_service import PricingService
-from utility.schema import (
+from src.services.pricing_service import PricingService
+from src.utility.schema import (
     BarrierOptionBaseModel,
     BinaryOptionBaseModel,
     BondBaseModel,
@@ -262,24 +262,24 @@ def base_url():
         raise HTTPException(status_code=404, detail=f"{e}") from e
 
 
-def start():
-    if os.getenv("APP_ENV", "dev") == "dev":
-        uvicorn.run(
-            "main_backend:app",
-            host="0.0.0.0",
-            port=int(os.getenv("APP_PORT", "8000")),
-            # workers=4,
-            reload=True,
-        )
-    else:
-        uvicorn.run(
-            "main_backend:app",
-            host="0.0.0.0",
-            port=int(os.getenv("APP_PORT", "8000")),
-            reload=False,
-            workers=4,
-        )
+# def start():
+#     if os.getenv("APP_ENV", "dev") == "dev":
+#         uvicorn.run(
+#             "main_backend:app",
+#             host="0.0.0.0",
+#             port=int(os.getenv("APP_PORT", "8000")),
+#             # workers=4,
+#             reload=True,
+#         )
+#     else:
+#         uvicorn.run(
+#             "main_backend:app",
+#             host="0.0.0.0",
+#             port=int(os.getenv("APP_PORT", "8000")),
+#             reload=False,
+#             workers=4,
+#         )
 
 
-if __name__ == "__main__":
-    start()
+# if __name__ == "__main__":
+#     start()

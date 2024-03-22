@@ -3,14 +3,14 @@ import streamlit as st
 import time
 import pandas as pd
 
-from pricing.base.rate import Rate
-from pricing.base.volatility import Volatility
-from pricing.barrier_options import BarrierOption
-from pricing.fixed_income import ZeroCouponBond, Bond
-from pricing.vanilla_options import VanillaOption
-from pricing.binary_options import BinaryOption
-from pricing.option_strategies import StraddleStrategy, StrangleStrategy, ButterflyStrategy, CallSpreadStrategy, PutSpreadStrategy, StripStrategy, StrapStrategy
-from utility.types import Maturity
+from src.pricing.base.rate import Rate
+from src.pricing.base.volatility import Volatility
+from src.pricing.barrier_options import BarrierOption
+from src.pricing.fixed_income import ZeroCouponBond, Bond
+from src.pricing.vanilla_options import VanillaOption
+from src.pricing.binary_options import BinaryOption
+from src.pricing.option_strategies import StraddleStrategy, StrangleStrategy, ButterflyStrategy, CallSpreadStrategy, PutSpreadStrategy, StripStrategy, StrapStrategy
+from src.utility.types import Maturity
 
 
 # Couleurs personnalisées

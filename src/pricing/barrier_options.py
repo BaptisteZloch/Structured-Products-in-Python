@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.stats import norm
-from pricing.base.option_base import OptionBase
-from pricing.base.rate import Rate
-from pricing.base.volatility import Volatility
-from utility.types import Maturity, OptionType, BarrierType
+from src.pricing.base.option_base import OptionBase
+from src.pricing.base.rate import Rate
+from src.pricing.base.volatility import Volatility
+from src.utility.types import Maturity, OptionType, BarrierType
 
 
 class BarrierOption(OptionBase):
