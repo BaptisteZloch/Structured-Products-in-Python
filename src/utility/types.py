@@ -6,7 +6,7 @@ DayCountConvention = Literal["ACT/360", "ACT/365"]
 
 
 OptionType = Literal["call", "put"]
-BarrierType = Literal["KO", "KI"]
+# BarrierType = Literal["KO", "KI"]
 ProductKindType = Literal["reverse-convertible", "outperformer-certificate"]
 OptionKindType = Literal["vanilla", "binary", "barrier"]
 BondType = Literal["vanilla", "zero-coupon"]

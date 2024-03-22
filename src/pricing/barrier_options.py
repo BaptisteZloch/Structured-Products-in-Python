@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 from scipy.stats import norm
 from tqdm import tqdm
@@ -20,9 +21,11 @@ class BarrierOption(OptionBase):
         barrier_level: float,
         barrier_type: BarrierType,
         barrier_direction: BarrierDirection,
+        dividend: Optional[float] = None
+        # self._dividend = dividend if dividend is not None else 0.0
     ) -> None:
         super().__init__(
-            spot_price, strike_price, maturity, rate, volatility, option_type
+            spot_price, strike_price, maturity, rate, volatility, option_type, dividend
         )
         self._barrier_level = barrier_level
         self._barrier_type = barrier_type
@@ -53,7 +56,10 @@ class BarrierOption(OptionBase):
 
         average_payoff = np.mean(payoffs)
         discounted_price = (
-            np.exp(-self._rate.get_rate() * self._maturity.maturity_in_years)
+            np.exp(
+                -(self._rate.get_rate(self._maturity) - self._dividend)
+                * self._maturity.maturity_in_years
+            )
             * average_payoff
         )
 
@@ -64,7 +70,7 @@ class BarrierOption(OptionBase):
     ):
         original_spot = self._spot_price
         original_volatility = self._volatility.get_volatility()
-        original_rate = self._rate.get_rate()
+        original_rate = self._rate.get_rate(self._maturity) - self._dividend
         original_maturity = self._maturity.maturity_in_years
 
         if spot_price is not None:
@@ -109,8 +115,12 @@ class BarrierOption(OptionBase):
         return vega
 
     def compute_rho(self):
-        price_up = self.compute_price_variation(rate=self._rate.get_rate() + EPSILON)
-        price_down = self.compute_price_variation(rate=self._rate.get_rate() - EPSILON)
+        price_up = self.compute_price_variation(
+            rate=(self._rate.get_rate(self._maturity) - self._dividend) + EPSILON
+        )
+        price_down = self.compute_price_variation(
+            rate=(self._rate.get_rate(self._maturity) - self._dividend) - EPSILON
+        )
         rho = (price_up - price_down) / (2 * EPSILON)
         return rho
 
