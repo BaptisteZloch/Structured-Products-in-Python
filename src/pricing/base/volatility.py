@@ -9,18 +9,13 @@ class Volatility:
         self,
         volatility: Optional[float] = None,
         volatility_surface: Optional[Dict] = None,
-        interpol_type: str = "quintic",
     ) -> None:
         self.__volatility = volatility
         self.__volatility_surface = volatility_surface
-        self.__interpol_type = interpol_type
 
-        if volatility_surface is not None:
-            if interpol_type not in ["linear", "cubic", "quintic"]:
-                raise ValueError("Invalid interpolation type")
-
-            stpr = sorted(set([k[0] for k in volatility_surface.keys()]))
-            mat = sorted(set([k[1] for k in volatility_surface.keys()]))
+        if self.__volatility_surface is not None:
+            stpr = sorted(set([k[0] for k in self.__volatility_surface.keys()]))
+            mat = sorted(set([k[1] for k in self.__volatility_surface.keys()]))
 
             if len(stpr) < 2 or len(mat) < 2:
                 raise Exception(
@@ -31,7 +26,7 @@ class Volatility:
 
             VS = np.array(
                 [
-                    [volatility_surface[(K, T)] for K, T in zip(row_K, row_T)]
+                    [self.__volatility_surface[(K, T)] for K, T in zip(row_K, row_T)]
                     for row_K, row_T in zip(Stpr, Mat)
                 ]
             )
@@ -49,8 +44,7 @@ class Volatility:
                 )
 
             try:
-                volatility = self.__interpol(strike_price, maturity)
-                return float(volatility)
+                return float(self.__interpol(strike_price, maturity))
             except ValueError:
                 raise ValueError(
                     "Interpolation failed for the provided strike_price and maturity."
