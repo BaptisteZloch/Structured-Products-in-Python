@@ -13,6 +13,8 @@ BondType = Literal["vanilla", "zero-coupon"]
 OptionStrategyType = Literal[
     "straddle", "strangle", "butterfly", "call-spread", "put-spread", "strip", "strap"
 ]
+BarrierDirection = Literal["up", "down"]
+BarrierType = Literal["ko", "ki"]
 
 
 class Maturity:
