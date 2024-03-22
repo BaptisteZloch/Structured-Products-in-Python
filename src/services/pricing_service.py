@@ -1,6 +1,7 @@
 from typing import Dict
 from pydantic import BaseModel
 
+from src.pricing.structured_products import OutperformerCertificate, ReverseConvertible
 from src.pricing.barrier_options import BarrierOption
 from src.pricing.base.rate import Rate
 from src.pricing.base.volatility import Volatility
@@ -22,7 +23,9 @@ from src.utility.schema import (
     ButterflyStrategyBaseModel,
     CallSpreadStrategyBaseModel,
     OptionBaseModel,
+    OutperformerCertificateBaseModel,
     PutSpreadStrategyBaseModel,
+    ReverseConvertibleBaseModel,
     StraddleStrategyBaseModel,
     StrangleStrategyBaseModel,
     StrapStrategyBaseModel,
@@ -33,6 +36,22 @@ from src.utility.types import Maturity
 
 
 class PricingService:
+    @staticmethod
+    def process_outperformer_certificate_structured_product(
+        request_received_model: OutperformerCertificateBaseModel,
+    ) -> Dict[str, float]:
+        product_dict = request_received_model.model_dump(exclude_unset=True)
+        opt = OutperformerCertificate(**product_dict)
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
+
+    @staticmethod
+    def process_reverse_convertible_structured_product(
+        request_received_model: ReverseConvertibleBaseModel,
+    ) -> Dict[str, float]:
+        product_dict = request_received_model.model_dump(exclude_unset=True)
+        opt = ReverseConvertible(**product_dict)
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
+
     @staticmethod
     def process_binary_options(
         request_received_model: BinaryOptionBaseModel,

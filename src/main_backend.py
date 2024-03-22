@@ -10,14 +10,21 @@ from src.utility.schema import (
     ButterflyStrategyBaseModel,
     CallSpreadStrategyBaseModel,
     OptionBaseModel,
+    OutperformerCertificateBaseModel,
     PutSpreadStrategyBaseModel,
+    ReverseConvertibleBaseModel,
     StraddleStrategyBaseModel,
     StrangleStrategyBaseModel,
     StrapStrategyBaseModel,
     StripStrategyBaseModel,
     ZeroCouponBondBaseModel,
 )
-from src.utility.types import BondType, OptionKindType, OptionStrategyType
+from src.utility.types import (
+    BondType,
+    OptionKindType,
+    OptionStrategyType,
+    ProductKindType,
+)
 
 app = FastAPI()
 
@@ -32,6 +39,30 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.post("/api/v1/price/structured-product/{product_kind}")
+def structured_product_pricing(
+    product_kind: ProductKindType,
+    product: Union[ReverseConvertibleBaseModel, OutperformerCertificateBaseModel],
+    pricing_service: PricingService = Depends(PricingService),
+) -> Dict[str, float]:
+    try:
+        if product_kind == "reverse-convertible" and isinstance(
+            product, ReverseConvertibleBaseModel
+        ):
+            return pricing_service.process_reverse_convertible_structured_product(
+                product
+            )
+        if product_kind == "outperformer-certificate" and isinstance(
+            product, OutperformerCertificateBaseModel
+        ):
+            return pricing_service.process_outperformer_certificate_structured_product(
+                product
+            )
+        raise ValueError("Provide valid input.")
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=f"{e}") from e
 
 
 @app.post("/api/v1/price/option/{option_kind}")

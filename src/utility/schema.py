@@ -14,19 +14,19 @@ class OptionBaseModel(BaseModel):
 
 class BinaryOptionBaseModel(OptionBaseModel):
     spot_price: float = Field(..., description="Spot price of the underlying")
-    strike_price: float
-    maturity: float
-    rate: float
+    strike_price: float = Field(..., description="Spot price of the underlying")
+    maturity: float = Field(..., description="Maturity in years")
+    rate: float = Field(..., description="Interest rates")
     volatility: float
     option_type: OptionType
 
 
 class BarrierOptionBaseModel(OptionBaseModel):
     spot_price: float = Field(..., description="Spot price of the underlying")
-    strike_price: float
-    maturity: float
-    rate: float
-    volatility: float
+    strike_price: float = Field(..., description="Strike price")
+    maturity: float = Field(..., description="Maturity in years")
+    rate: float = Field(..., description="Interest rates")
+    volatility: float = Field(..., description="Implied volatility")
     option_type: OptionType
     barrier_level: float
     barrier_type: BarrierType
@@ -83,3 +83,11 @@ class ZeroCouponBondBaseModel(BaseModel):
 class BondBaseModel(ZeroCouponBondBaseModel):
     coupon_rate: float
     nb_coupon: int
+
+
+class ReverseConvertibleBaseModel(BaseModel):
+    pass
+
+
+class OutperformerCertificateBaseModel(BaseModel):
+    pass
