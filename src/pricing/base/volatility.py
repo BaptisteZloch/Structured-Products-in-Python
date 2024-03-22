@@ -36,8 +36,17 @@ class Volatility:
     ) -> float:
         if self.__volatility is not None:
             return self.__volatility
+        elif self.__interpol is not None:
+            if strike_price is None or maturity is None:
+                raise ValueError("Both strike_price and maturity must be provided for interpolation.")
+        
+            try:
+                volatility = self.__interpol(strike_price, maturity)
+                return float(volatility)
+            except ValueError:
+                raise ValueError("Interpolation failed for the provided strike_price and maturity.")
         else:
-            raise NotImplementedError()
+            raise NotImplementedError("Volatility surface interpolation has not been initialized.")
     
     def print_surface(
         self,
@@ -80,6 +89,7 @@ if __name__ == '__main__':
 
     volatility_object.print_surface()
 
+    print(volatility_object.get_volatility(1.3, 0.75))
 
 
 
