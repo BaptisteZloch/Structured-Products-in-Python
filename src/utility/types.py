@@ -7,6 +7,11 @@ DayCountConvention = Literal["ACT/360", "ACT/365"]
 
 OptionType = Literal["call", "put"]
 BarrierType = Literal["KO", "KI"]
+OptionKindType = Literal["vanilla", "binary", "barrier"]
+BondType = Literal["vanilla", "zero-coupon"]
+OptionStrategyType = Literal[
+    "straddle", "strangle", "butterfly", "call-spread", "put-spread", "strip", "strap"
+]
 
 
 class Maturity:

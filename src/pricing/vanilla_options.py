@@ -1,9 +1,9 @@
 import numpy as np
 from scipy.stats import norm
-from pricing.base.option_base import OptionBase
-from pricing.base.volatility import Volatility
-from pricing.base.rate import Rate
-from utility.types import OptionType, Maturity
+from src.pricing.base.option_base import OptionBase
+from src.pricing.base.volatility import Volatility
+from src.pricing.base.rate import Rate
+from src.utility.types import OptionType, Maturity
 
 
 class VanillaOption(OptionBase):
@@ -31,3 +31,12 @@ class VanillaOption(OptionBase):
             ) * norm.cdf(-self._d2) - self._spot_price * norm.cdf(-self._d1)
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
