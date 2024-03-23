@@ -6,9 +6,9 @@ import time
 import pandas as pd
 import numpy as np
 
-from src.pricing.base.rate import Rate
-from src.pricing.base.volatility import Volatility
-from src.utility.types import Maturity
+from pricing.base.rate import Rate
+from pricing.base.volatility import Volatility
+from utility.types import Maturity
 
 
 URL = "https://structured-pricing-api-dauphine.koyeb.app"
