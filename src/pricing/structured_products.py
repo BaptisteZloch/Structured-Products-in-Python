@@ -48,14 +48,104 @@ class ReverseConvertible(StructuredProductBase):
         return self._price
 
 
-    def compute_greeks(self) -> Dict[str, float]:
+    def compute_delta(self) -> float:
+        
+        RC_spot = ReverseConvertible(
+            self.__rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price*(1-0.01),
+            self.__strike_price,
+            self.__volatility,
+            self.__converse_rate
+            )
+        
+        if self._price is None:
+            self.compute_price()
+            
+        RC_spot.compute_price()
+        delta = (self._price - RC_spot._price) / (self.__spot_price*0.01)
+        
+        return delta
+    
+    def compute_gamma(self) -> float:
+        
+        RC_spot = ReverseConvertible(
+            self.__rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price*(1-0.01),
+            self.__strike_price,
+            self.__volatility,
+            self.__converse_rate
+            )
+        
+        delta1 = self.compute_delta()
+        delta2 = RC_spot.compute_delta()
+        
+        gamma = (delta1-delta2) / (self.__spot_price*0.01)
+        
+        return gamma
+        
+    def compute_rho(self) -> float:
+        new_rate = Rate(
+            self.__rate.__rate * (1-0.01),
+            self.__rate.__rate_type,
+            self.__rate.__interpolation_type
+            )
+        RC_rate = ReverseConvertible(
+            new_rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price,
+            self.__strike_price,
+            self.__volatility,
+            self.__converse_rate
+            )
+        del new_rate
+        
+        if self._price is None:
+            self.compute_price()
+        RC_rate.compute_price()
+        
+        rho = (self._price - RC_rate._price) / (0.01*self.__rate.__rate)
+        
+        return rho
+    
+    def compute_vega(self) -> float:
+        new_vol = Volatility(
+            self.__volatility.__volatility * (1-0.01),
+            self.__volatility.__interpol_type
+            )
+        RC_vol = ReverseConvertible(
+            self.__rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price,
+            self.__strike_price,
+            new_vol,
+            self.__converse_rate
+            )
+        del new_vol
+        
+        if self._price is None:
+            self.compute_price()
+        RC_vol.compute_price()
+        
+        vega = (self._price - RC_vol._price) / (0.01*self.__volatility.__volatility)
+        
+        return vega
+        
+        
+    def compute_greeks(self) -> Dict[str, float]:        
         return {
-            "delta": 0.0,
-            "gamma": 0.0,
+            "delta": self.compute_delta(),
+            "gamma": self.compute_gamma(),
             "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
+            "rho": self.compute_rho(),
+            "vega": self.compute_vega(),
         }
+
 
 
 class OutperformerCertificate(StructuredProductBase):
@@ -118,12 +208,105 @@ class OutperformerCertificate(StructuredProductBase):
                     - self.__n_call * option_call2.compute_price() \
                     - option_put.compute_price()
         return self._price
+    
+    
+    def compute_delta(self) -> float:
+        
+        OC_spot = OutperformerCertificate(
+            self.__rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price * (1-0.01),
+            self.__strike_price1,
+            self.__strike_price2,
+            self.__volatility,
+            self.__n_call
+            )
+        
+        if self._price is None:
+            self.compute_price()
+            
+        OC_spot.compute_price()
+        delta = (self._price - OC_spot._price) / (self.__spot_price*0.01)
+        
+        return delta
+    
+    def compute_gamma(self) -> float:
+        
+        OC_spot = OutperformerCertificate(
+            self.__rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price * (1-0.01),
+            self.__strike_price1,
+            self.__strike_price2,
+            self.__volatility,
+            self.__n_call
+            )
+        
+        delta1 = self.compute_delta()
+        delta2 = OC_spot.compute_delta()
+        
+        gamma = (delta1-delta2) / (self.__spot_price*0.01)
+        
+        return gamma
+        
+    def compute_rho(self) -> float:
+        new_rate = Rate(
+            self.__rate.__rate * (1-0.01),
+            self.__rate.__rate_type,
+            self.__rate.__interpolation_type
+            )
+        OC_rate = OutperformerCertificate(
+            new_rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price * (1-0.01),
+            self.__strike_price1,
+            self.__strike_price2,
+            self.__volatility,
+            self.__n_call
+            )
+        del new_rate
+        
+        if self._price is None:
+            self.compute_price()
+        OC_rate.compute_price()
+        
+        rho = (self._price - OC_rate._price) / (0.01*self.__rate.__rate)
+        
+        return rho
+    
+    def compute_vega(self) -> float:
+        new_vol = Volatility(
+            self.__volatility.__volatility * (1-0.01),
+            self.__volatility.__interpol_type
+            )
+        OC_vol = OutperformerCertificate(
+            self.__rate,
+            self.__maturity,
+            self.__nominal,
+            self.__spot_price,
+            self.__strike_price1,
+            self.__strike_price2,
+            new_vol,
+            self.__n_call
+            )
+        del new_vol
+        
+        if self._price is None:
+            self.compute_price()
+        OC_vol.compute_price()
+        
+        vega = (self._price - OC_vol._price) / (0.01*self.__volatility.__volatility)
+        
+        return vega
 
     def compute_greeks(self) -> Dict[str, float]:
         return {
-            "delta": 0.0,
-            "gamma": 0.0,
+            "delta": self.compute_delta(),
+            "gamma": self.compute_gamma(),
             "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
+            "rho": self.compute_rho(),
+            "vega": self.compute_vega(),
         }
