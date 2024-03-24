@@ -25,7 +25,15 @@ class OptionBaseModel(BaseModel):
     )
     volatility: float
     # volatility: Optional[float] = Field(default=None, description="The implied volatility")
-    # volatility_surface: Optional[float] = Field(default=None, description="The implied volatility")
+    volatility_surface: Optional[Dict[str, Dict[str, float]]] = Field(
+        default=None, description="The implied volatility"
+    )
+    # Maturity en première clé et Strike en seconde
+    # {
+    #     '0.3':{'0.9':0.14,'1':0.14,'1.1':0.14,},
+    #     '0.5':{'0.9':0.14,1:0.14,'1.1':0.14,},
+    #     1:{'0.9':0.14,'1':0.14,'1.1':0.14,},
+    # }
     option_type: OptionType
 
 
