@@ -87,8 +87,11 @@ class BarrierOption(OptionBase):
 
     def compute_delta(self):
         price_up = self.compute_price_variation(spot_price=self._spot_price + EPSILON)
+        
         price_down = self.compute_price_variation(spot_price=self._spot_price - EPSILON)
-        delta = (price_up - price_down) / (2 * EPSILON)
+        print(price_up)
+        print(price_down)
+        delta = (price_up - price_down) / EPSILON
         return delta
 
     def compute_gamma(self):
@@ -105,13 +108,13 @@ class BarrierOption(OptionBase):
         price_down = self.compute_price_variation(
             volatility=self._volatility.get_volatility() - EPSILON
         )
-        vega = (price_up - price_down) / (2 * EPSILON)
+        vega = (price_up - price_down) / EPSILON
         return vega
 
     def compute_rho(self):
         price_up = self.compute_price_variation(rate=self._rate.get_rate() + EPSILON)
         price_down = self.compute_price_variation(rate=self._rate.get_rate() - EPSILON)
-        rho = (price_up - price_down) / (2 * EPSILON)
+        rho = (price_up - price_down) / EPSILON
         return rho
 
     def compute_theta(self):
