@@ -42,7 +42,7 @@ class BarrierOptionBaseModel(OptionBaseModel):
 class OptionStrategyBaseModel(BaseModel):
     spot_price: float
     maturity: float
-    dividend: Optional[float] = Field(default=0.0, description="Dividend yield")
+    dividend: float = Field(default=0.0, description="Dividend yield")
     rate: Optional[float] = Field(default=None, description="Interest rates")
     rate_curve: Optional[Dict[str, float]] = Field(
         default=None,

@@ -55,7 +55,9 @@ class PricingService:
     @staticmethod
     def __handle_vol_and_vol_surface_base_model(base_model_dict: Dict[str, Any]):
         if "volatility" in base_model_dict.keys():
-            base_model_dict["volatility"] = Volatility(volatility=base_model_dict["volatility"])
+            base_model_dict["volatility"] = Volatility(
+                volatility=base_model_dict["volatility"]
+            )
         elif "volatility_surface" in base_model_dict.keys():
             raise NotImplementedError()
             # base_model_dict["rate_curve"] = Rate(
@@ -107,6 +109,7 @@ class PricingService:
             rate=product_dict["rate"],
             volatility=product_dict["volatility"],
             option_type=product_dict["option_type"],
+            dividend=product_dict["dividend"],
         )
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
@@ -131,6 +134,7 @@ class PricingService:
             rate=product_dict["rate"],
             volatility=product_dict["volatility"],
             option_type=product_dict["option_type"],
+            dividend=product_dict["dividend"],
         )
 
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
@@ -150,7 +154,7 @@ class PricingService:
         )
         opt = BarrierOption(**product_dict)
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_vanilla_bond(request_received_model: BaseModel) -> Dict[str, float]:
@@ -188,9 +192,16 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        opt = StraddleStrategy(**product_dict)
+        opt = StraddleStrategy(
+            spot_price=product_dict["spot_price"],
+            strike_price=product_dict["strike_price"],
+            maturity=product_dict["maturity"],
+            rate=product_dict["rate"],
+            volatility=product_dict["volatility"],
+            dividend=product_dict["dividend"],
+        )
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_strangle_strategy(
@@ -204,9 +215,17 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        opt = StrangleStrategy(**product_dict)
+        opt = StrangleStrategy(
+            spot_price=product_dict["spot_price"],
+            strike_price1=product_dict["strike_price1"],
+            strike_price2=product_dict["strike_price2"],
+            maturity=product_dict["maturity"],
+            rate=product_dict["rate"],
+            volatility=product_dict["volatility"],
+            dividend=product_dict["dividend"],
+        )
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_butterfly_strategy(
@@ -220,9 +239,18 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        opt = ButterflyStrategy(**product_dict)
+        opt = ButterflyStrategy(
+            spot_price=product_dict["spot_price"],
+            strike_price1=product_dict["strike_price1"],
+            strike_price2=product_dict["strike_price2"],
+            strike_price3=product_dict["strike_price3"],
+            maturity=product_dict["maturity"],
+            rate=product_dict["rate"],
+            volatility=product_dict["volatility"],
+            dividend=product_dict["dividend"],
+        )
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_call_spread_strategy(
@@ -236,9 +264,17 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        opt = CallSpreadStrategy(**product_dict)
+        opt = CallSpreadStrategy(
+            spot_price=product_dict["spot_price"],
+            lower_strike=product_dict["lower_strike"],
+            upper_strike=product_dict["upper_strike"],
+            maturity=product_dict["maturity"],
+            rate=product_dict["rate"],
+            volatility=product_dict["volatility"],
+            dividend=product_dict["dividend"],
+        )
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_put_spread_strategy(
@@ -252,9 +288,17 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        opt = PutSpreadStrategy(**product_dict)
+        opt = PutSpreadStrategy(
+            spot_price=product_dict["spot_price"],
+            lower_strike=product_dict["lower_strike"],
+            upper_strike=product_dict["upper_strike"],
+            maturity=product_dict["maturity"],
+            rate=product_dict["rate"],
+            volatility=product_dict["volatility"],
+            dividend=product_dict["dividend"],
+        )
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_strip_strategy(
@@ -268,9 +312,17 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        opt = StripStrategy(**product_dict)
+        opt = StripStrategy(
+            spot_price=product_dict["spot_price"],
+            strike_price1=product_dict["strike_price1"],
+            strike_price2=product_dict["strike_price2"],
+            maturity=product_dict["maturity"],
+            rate=product_dict["rate"],
+            volatility=product_dict["volatility"],
+            dividend=product_dict["dividend"],
+        )
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
     def process_strap_strategy(
@@ -284,6 +336,14 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        opt = StrapStrategy(**product_dict)
+        opt = StrapStrategy(
+            spot_price=product_dict["spot_price"],
+            strike_price1=product_dict["strike_price1"],
+            strike_price2=product_dict["strike_price2"],
+            maturity=product_dict["maturity"],
+            rate=product_dict["rate"],
+            volatility=product_dict["volatility"],
+            dividend=product_dict["dividend"],
+        )
 
-        return {"price": opt.compute_price()}
+        return dict({"price": opt.compute_price()}, **opt.compute_greeks())

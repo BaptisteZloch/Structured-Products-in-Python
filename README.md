@@ -13,7 +13,7 @@ In Linux/MacOS
 ```bash
 python -m venv .venv 
 # Could also be python3 -m venv .venv 
-.\.venv\bin\pip install -r requirements.txt
+.\.venv\bin\pip install -r requirements.txt -U
 ```
 All the code is in the `src` folder.
 The project guidelines are in the `static` folder.

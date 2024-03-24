@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 from tqdm import tqdm
@@ -17,6 +18,7 @@ class OptionBase(ABC):
         rate: Rate,
         volatility: Volatility,
         option_type: OptionType,
+        dividend: Optional[float] = None,
     ) -> None:
         self._spot_price = spot_price
         self._strike_price = strike_price
@@ -24,6 +26,7 @@ class OptionBase(ABC):
         self._rate = rate
         self._volatility = volatility
         self._option_type = option_type
+        self._dividend = dividend if dividend is not None else 0.0
         self._d1 = self.__d1_func()
         self._d2 = self.__d2_func()
 
@@ -36,19 +39,12 @@ class OptionBase(ABC):
         return (
             np.log(self._spot_price / self._strike_price)
             + (
-                self._rate.get_rate(self._maturity)
-                + 0.5
-                * self._volatility.get_volatility(
-                    self._strike_price / self._spot_price,
-                    self._maturity.maturity_in_years,
-                )
-                ** 2
+                (self._rate.get_rate(self._maturity) - self._dividend)
+                + 0.5 * self._volatility.get_volatility() ** 2
             )
             * self._maturity.maturity_in_years
         ) / (
-            self._volatility.get_volatility(
-                self._strike_price / self._spot_price, self._maturity.maturity_in_years
-            )
+            self._volatility.get_volatility()
             * np.sqrt(self._maturity.maturity_in_years)
         )
 
@@ -62,23 +58,14 @@ class OptionBase(ABC):
         return (
             np.log(self._spot_price / self._strike_price)
             + (
-                self._rate.get_rate(self._maturity)
-                + 0.5
-                * self._volatility.get_volatility(
-                    self._strike_price / self._spot_price,
-                    self._maturity.maturity_in_years,
-                )
-                ** 2
+                (self._rate.get_rate(self._maturity) - self._dividend)
+                + 0.5 * self._volatility.get_volatility() ** 2
             )
             * self._maturity.maturity_in_years
         ) / (
-            self._volatility.get_volatility(
-                self._strike_price / self._spot_price, self._maturity.maturity_in_years
-            )
+            self._volatility.get_volatility()
             * np.sqrt(self._maturity.maturity_in_years)
-        ) - self._volatility.get_volatility(
-            self._strike_price / self._spot_price, self._maturity.maturity_in_years
-        ) * np.sqrt(
+        ) - self._volatility.get_volatility() * np.sqrt(
             self._maturity.maturity_in_years
         )
 
@@ -107,16 +94,20 @@ class OptionBase(ABC):
                 maturity, option type, and volatility.
         """
         return f"Option<Spot Price={self._spot_price:.2f}, Strike Price={self._strike_price:.2f}, Maturity={self._maturity}, Option Type={self._option_type}, Volatility={self._volatility}>"
-    
+
     def monte_carlo_simulation(self, num_paths, num_steps):
-    
         dt = self._maturity.maturity_in_years / num_steps
-        nudt = (self._rate.get_rate() - 0.5 * self._volatility.get_volatility()**2) * dt
+        nudt = (
+            (self._rate.get_rate(self._maturity) - self._dividend)
+            - 0.5 * self._volatility.get_volatility() ** 2
+        ) * dt
         volsdt = self._volatility.get_volatility() * np.sqrt(dt)
         paths = np.zeros((num_paths, num_steps + 1))
         paths[:, 0] = self._spot_price
 
-        for step in tqdm(range(1, num_steps + 1),desc="Computing steps...",leave=False):
+        for step in tqdm(
+            range(1, num_steps + 1), desc="Computing steps...", leave=False
+        ):
             random_shocks = np.random.normal(0, 1, num_paths)
             paths[:, step] = paths[:, step - 1] * np.exp(nudt + volsdt * random_shocks)
         return paths
