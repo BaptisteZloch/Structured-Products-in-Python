@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Optional
 from src.pricing.base.rate import Rate
 from src.pricing.base.volatility import Volatility
 from src.pricing.vanilla_options import VanillaOption
@@ -12,14 +13,16 @@ class OptionStrategy(ABC):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
         self._spot_price = spot_price
         self._maturity = maturity
         self._rate = rate
         self._volatility = volatility
+        self._dividend = dividend if dividend is not None else 0.0
 
     @abstractmethod
-    def compute_price(self):
+    def compute_greeks(self):
         pass
 
 
@@ -31,8 +34,9 @@ class StraddleStrategy(OptionStrategy):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility)
+        super().__init__(spot_price, maturity, rate, volatility, dividend)
         self._strike_price = strike_price
 
     def compute_price(self) -> float:
@@ -44,6 +48,7 @@ class StraddleStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "put",
+                self._dividend,
             ).compute_price()
             + VanillaOption(
                 self._spot_price,
@@ -52,8 +57,18 @@ class StraddleStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class StrangleStrategy(OptionStrategy):
@@ -65,6 +80,7 @@ class StrangleStrategy(OptionStrategy):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
         """_summary_
 
@@ -76,7 +92,7 @@ class StrangleStrategy(OptionStrategy):
             rate (Rate): _description_
             volatility (Volatility): _description_
         """
-        super().__init__(spot_price, maturity, rate, volatility)
+        super().__init__(spot_price, maturity, rate, volatility, dividend)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -92,6 +108,7 @@ class StrangleStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "put",
+                self._dividend,
             ).compute_price()
             + VanillaOption(
                 self._spot_price,
@@ -100,8 +117,18 @@ class StrangleStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class ButterflyStrategy(OptionStrategy):
@@ -114,8 +141,9 @@ class ButterflyStrategy(OptionStrategy):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility)
+        super().__init__(spot_price, maturity, rate, volatility, dividend)
         assert (
             strike_price1 < strike_price2 < strike_price3
         ), "Error provide strike_price1 < strike_price2 < strike_price3."
@@ -132,14 +160,17 @@ class ButterflyStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
-            - 2 * VanillaOption(
+            - 2
+            * VanillaOption(
                 self._spot_price,
                 self._strike_price2,
                 self._maturity,
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
             + VanillaOption(
                 self._spot_price,
@@ -148,8 +179,18 @@ class ButterflyStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class CallSpreadStrategy(OptionStrategy):
@@ -161,8 +202,9 @@ class CallSpreadStrategy(OptionStrategy):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility)
+        super().__init__(spot_price, maturity, rate, volatility, dividend)
         assert (
             lower_strike < upper_strike
         ), "Error: lower strike must be less than upper strike."
@@ -178,6 +220,7 @@ class CallSpreadStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
@@ -186,8 +229,18 @@ class CallSpreadStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class PutSpreadStrategy(OptionStrategy):
@@ -199,8 +252,9 @@ class PutSpreadStrategy(OptionStrategy):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility)
+        super().__init__(spot_price, maturity, rate, volatility, dividend)
         assert (
             lower_strike < upper_strike
         ), "Error: lower strike must be less than upper strike."
@@ -216,6 +270,7 @@ class PutSpreadStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "put",
+                self._dividend,
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
@@ -224,8 +279,18 @@ class PutSpreadStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "put",
+                self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class StripStrategy(OptionStrategy):
@@ -237,8 +302,9 @@ class StripStrategy(OptionStrategy):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility)
+        super().__init__(spot_price, maturity, rate, volatility, dividend)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -247,7 +313,8 @@ class StripStrategy(OptionStrategy):
 
     def compute_price(self) -> float:
         return (
-            2 * VanillaOption(
+            2
+            * VanillaOption(
                 self._spot_price,
                 self._strike_price2,
                 self._maturity,
@@ -262,8 +329,18 @@ class StripStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "put",
+                self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }
 
 
 class StrapStrategy(OptionStrategy):
@@ -275,8 +352,9 @@ class StrapStrategy(OptionStrategy):
         maturity: Maturity,
         rate: Rate,
         volatility: Volatility,
+        dividend: Optional[float] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility)
+        super().__init__(spot_price, maturity, rate, volatility, dividend)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -292,13 +370,25 @@ class StrapStrategy(OptionStrategy):
                 self._rate,
                 self._volatility,
                 "call",
+                self._dividend,
             ).compute_price()
-            - 2 * VanillaOption(
+            - 2
+            * VanillaOption(
                 self._spot_price,
                 self._strike_price2,
                 self._maturity,
                 self._rate,
                 self._volatility,
                 "put",
+                self._dividend,
             ).compute_price()
         )
+
+    def compute_greeks(self):
+        return {
+            "delta": 0.0,
+            "gamma": 0.0,
+            "theta": 0.0,
+            "rho": 0.0,
+            "vega": 0.0,
+        }

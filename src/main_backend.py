@@ -1,3 +1,5 @@
+import os
+import sys
 from typing import Dict, Union
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import FastAPI, HTTPException, Depends
@@ -11,6 +13,7 @@ from src.utility.schema import (
     CallSpreadStrategyBaseModel,
     OptionBaseModel,
     OutperformerCertificateBaseModel,
+    PricingResultBaseModel,
     PutSpreadStrategyBaseModel,
     ReverseConvertibleBaseModel,
     StraddleStrategyBaseModel,
@@ -41,7 +44,10 @@ app.add_middleware(
 )
 
 
-@app.post("/api/v1/price/structured-product/{product_kind}")
+@app.post(
+    "/api/v1/price/structured-product/{product_kind}",
+    response_model=PricingResultBaseModel,
+)
 def structured_product_pricing(
     product_kind: ProductKindType,
     product: Union[ReverseConvertibleBaseModel, OutperformerCertificateBaseModel],
@@ -65,7 +71,7 @@ def structured_product_pricing(
         raise HTTPException(status_code=404, detail=f"{e}") from e
 
 
-@app.post("/api/v1/price/option/{option_kind}")
+@app.post("/api/v1/price/option/{option_kind}", response_model=PricingResultBaseModel)
 def option_pricing(
     option_kind: OptionKindType,
     product: Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel],
@@ -78,6 +84,14 @@ def option_pricing(
         "strike_price": 100,
         "maturity": 1,
         "rate": 0.05,
+        "volatility": 0.2,
+        "option_type": "call"
+    }
+    {
+        "spot_price":100,
+        "strike_price": 100,
+        "maturity": 1,
+        "rate_curve": {"0.5":0.02,"1":0.06},
         "volatility": 0.2,
         "option_type": "call"
     }
@@ -95,7 +109,6 @@ def option_pricing(
     Returns:
         Dict[str, float]: _description_
     """
-    print(product)
     try:
         if option_kind == "binary" and isinstance(product, BinaryOptionBaseModel):
             return pricing_service.process_binary_options(product)
@@ -105,10 +118,18 @@ def option_pricing(
             return pricing_service.process_barrier_options(product)
         raise ValueError("Provide valid input.")
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"{e}") from e
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        raise HTTPException(
+            status_code=404,
+            detail=f"{e} | {exc_type} | {os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]} | {exc_tb.tb_lineno}",
+        ) from e
 
 
-@app.post("/api/v1/price/option-strategy/{option_strategy}")
+@app.post(
+    "/api/v1/price/option-strategy/{option_strategy}",
+    response_model=PricingResultBaseModel,
+    description="Function that prices the options strategies : straddle, strangle, butterfly, call-spread, put-spread, strip, strap. ",
+)
 def option_strategy_pricing(
     option_strategy: OptionStrategyType,
     product: Union[
@@ -159,7 +180,11 @@ def option_strategy_pricing(
             return pricing_service.process_strap_strategy(product)
         raise ValueError("Provide valid input.")
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"{e}") from e
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        raise HTTPException(
+            status_code=404,
+            detail=f"{e} | {exc_type} | {os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]} | {exc_tb.tb_lineno}",
+        ) from e
 
 
 @app.post("/api/v1/price/bond/{bond_type}")
@@ -208,7 +233,11 @@ def bond_pricing(
             return pricing_service.process_zero_coupon_bond(product)
         raise ValueError("Provide valid input.")
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"{e}") from e
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        raise HTTPException(
+            status_code=404,
+            detail=f"{e} | {exc_type} | {os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]} | {exc_tb.tb_lineno}",
+        ) from e
 
 
 @app.get("/")
@@ -216,7 +245,11 @@ def base_url():
     try:
         return RedirectResponse("/docs")
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"{e}") from e
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        raise HTTPException(
+            status_code=404,
+            detail=f"{e} | {exc_type} | {os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]} | {exc_tb.tb_lineno}",
+        ) from e
 
 
 # def start():
