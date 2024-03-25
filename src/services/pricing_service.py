@@ -1,3 +1,4 @@
+from itertools import product
 from typing import Any, Dict
 from pydantic import BaseModel
 
@@ -59,14 +60,25 @@ class PricingService:
                 volatility=base_model_dict["volatility"]
             )
         elif "volatility_surface" in base_model_dict.keys():
-            raise NotImplementedError()
-            # base_model_dict["rate_curve"] = Rate(
-            #     rate_curve={
-            #         Maturity(float(maturity_string)): rates
-            #         for maturity_string, rates in base_model_dict["rate_curve"].items()
-            #     }
-            # )
-            # base_model_dict["rate"] = base_model_dict.pop("rate_curve")
+            volatility_surface = {}
+            for comb in product(
+                map(float, base_model_dict["volatility_surface"].keys()),
+                map(
+                    float,
+                    list(base_model_dict["volatility_surface"].items())[0][-1].keys(),
+                ),
+            ):
+                volatility_surface[comb] = (
+                    base_model_dict["volatility_surface"]
+                    .get(str(comb[0]))
+                    .get(str(comb[-1]), int(comb[-1]))
+                )
+                base_model_dict["volatility_surface"] = Volatility(
+                    volatility_surface=volatility_surface
+                )
+                base_model_dict["volatility"] = base_model_dict.pop(
+                    "volatility_surface"
+                )
         else:
             raise ValueError(
                 "Error, provide either volatility or volatility_surface argument"
