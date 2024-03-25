@@ -2,10 +2,9 @@ from typing import Optional
 import numpy as np
 from scipy.stats import norm
 from src.pricing.base.option_base import OptionBase
-from src.pricing.base.rate import Rate
 from src.pricing.base.volatility import Volatility
+from src.pricing.base.rate import Rate
 from src.utility.types import Maturity, OptionType
-
 
 class BinaryOption(OptionBase):
     def __init__(
@@ -17,24 +16,22 @@ class BinaryOption(OptionBase):
         volatility: Volatility,
         option_type: OptionType,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__(
-            spot_price, strike_price, maturity, rate, volatility, option_type, dividend
+            spot_price, strike_price, maturity, rate, volatility, option_type, dividend, foreign_rate
         )
 
     def compute_price(self) -> float:
+        effective_rate = self._domestic_rate.get_rate(self._maturity) - (self._foreign_rate.get_rate(self._maturity) if self._foreign_rate else self._dividend)
+
         if self._option_type == "call":
-            return np.exp(
-                -(self._rate.get_rate(self._maturity) - self._dividend)
-                * self._maturity.maturity_in_years
-            ) * norm.cdf(self._d2)
+            price = np.exp(-effective_rate * self._maturity.maturity_in_years) * norm.cdf(self._d2)
         elif self._option_type == "put":
-            return np.exp(
-                -(self._rate.get_rate(self._maturity) - self._dividend)
-                * self._maturity.maturity_in_years
-            ) * norm.cdf(-self._d2)
+            price = np.exp(-effective_rate * self._maturity.maturity_in_years) * norm.cdf(-self._d2)
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
+        return price
 
     def compute_delta(self):
         d2 = self._d2

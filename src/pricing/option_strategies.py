@@ -14,12 +14,14 @@ class OptionStrategy(ABC):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None, 
     ) -> None:
         self._spot_price = spot_price
         self._maturity = maturity
         self._rate = rate
         self._volatility = volatility
         self._dividend = dividend if dividend is not None else 0.0
+        self._foreign_rate = foreign_rate  
 
     @abstractmethod
     def compute_greeks(self):
@@ -35,8 +37,10 @@ class StraddleStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None, 
+
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         self._strike_price = strike_price
 
     def compute_price(self) -> float:
@@ -49,6 +53,7 @@ class StraddleStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             + VanillaOption(
                 self._spot_price,
@@ -58,6 +63,7 @@ class StraddleStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate
             ).compute_price()
         )
 
@@ -81,6 +87,7 @@ class StrangleStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None, 
     ) -> None:
         """_summary_
 
@@ -92,7 +99,7 @@ class StrangleStrategy(OptionStrategy):
             rate (Rate): _description_
             volatility (Volatility): _description_
         """
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -109,6 +116,7 @@ class StrangleStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             + VanillaOption(
                 self._spot_price,
@@ -118,6 +126,7 @@ class StrangleStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
@@ -142,8 +151,9 @@ class ButterflyStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None, 
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2 < strike_price3
         ), "Error provide strike_price1 < strike_price2 < strike_price3."
@@ -161,6 +171,7 @@ class ButterflyStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             - 2
             * VanillaOption(
@@ -180,6 +191,7 @@ class ButterflyStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
@@ -203,8 +215,9 @@ class CallSpreadStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None, 
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             lower_strike < upper_strike
         ), "Error: lower strike must be less than upper strike."
@@ -221,6 +234,7 @@ class CallSpreadStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
@@ -230,6 +244,7 @@ class CallSpreadStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
@@ -253,8 +268,9 @@ class PutSpreadStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None, 
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             lower_strike < upper_strike
         ), "Error: lower strike must be less than upper strike."
@@ -271,6 +287,7 @@ class PutSpreadStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
@@ -280,6 +297,7 @@ class PutSpreadStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
@@ -303,8 +321,9 @@ class StripStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None, 
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -320,6 +339,7 @@ class StripStrategy(OptionStrategy):
                 self._maturity,
                 self._rate,
                 self._volatility,
+                self._foreign_rate,
                 "put",
             ).compute_price()
             - VanillaOption(
@@ -330,6 +350,7 @@ class StripStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
@@ -353,8 +374,9 @@ class StrapStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -371,6 +393,7 @@ class StrapStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             - 2
             * VanillaOption(
@@ -381,6 +404,7 @@ class StrapStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 

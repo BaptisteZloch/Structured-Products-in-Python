@@ -19,6 +19,7 @@ class OptionBaseModel(BaseModel):
     maturity: float = Field(..., description="Maturity in years")
     dividend: Optional[float] = Field(default=0.0, description="Dividend yield")
     rate: Optional[float] = Field(default=None, description="Interest rates")
+    foreign_rate: Optional[float] = Field(default=None, description="Foreign interest rate for FX options")
     rate_curve: Optional[Dict[str, float]] = Field(
         default=None,
         description="Interest rates curve dictionary maturity as keys and rates as values",

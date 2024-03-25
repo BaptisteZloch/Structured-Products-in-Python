@@ -21,11 +21,12 @@ class BarrierOption(OptionBase):
         barrier_level: float,
         barrier_type: BarrierType,
         barrier_direction: BarrierDirection,
-        dividend: Optional[float] = None
+        dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
         # self._dividend = dividend if dividend is not None else 0.0
     ) -> None:
         super().__init__(
-            spot_price, strike_price, maturity, rate, volatility, option_type, dividend
+            spot_price, strike_price, maturity, rate, volatility, option_type, dividend, foreign_rate
         )
         self._barrier_level = barrier_level
         self._barrier_type = barrier_type
@@ -55,22 +56,18 @@ class BarrierOption(OptionBase):
             payoffs.append(payoff)
 
         average_payoff = np.mean(payoffs)
-        discounted_price = (
-            np.exp(
-                -(self._rate.get_rate(self._maturity) - self._dividend)
-                * self._maturity.maturity_in_years
-            )
-            * average_payoff
-        )
+        effective_rate = self._domestic_rate.get_rate(self._maturity) - (self._foreign_rate.get_rate(self._maturity) if self._foreign_rate else self._dividend)
+        discounted_price = np.exp(-effective_rate * self._maturity.maturity_in_years) * average_payoff
 
         return discounted_price
+
 
     def compute_price_variation(
         self, spot_price=None, volatility=None, rate=None, maturity=None
     ):
         original_spot = self._spot_price
         original_volatility = self._volatility.get_volatility()
-        original_rate = self._rate.get_rate(self._maturity) - self._dividend
+        original_rate = self._domestic_rate.get_rate(self._maturity) - self._dividend
         original_maturity = self._maturity.maturity_in_years
 
         if spot_price is not None:
