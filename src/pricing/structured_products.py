@@ -63,7 +63,7 @@ class ReverseConvertible(StructuredProductBase):
             "gamma": - (1-self.__converse_rate) * option.compute_gamma(),
             "theta": - (1-self.__converse_rate) * option.compute_theta(),
             "rho": - (1-self.__converse_rate) * option.compute_rho(),
-            "vega": - (1-self.__converse_rate) * option.compute_vega(),
+            "vega": - (1-self.__converse_rate) * option.compute_vega()
         }
 
 
@@ -152,5 +152,5 @@ class OutperformerCertificate(StructuredProductBase):
             "gamma": n * (OC1.compute_gamma() - OC2.compute_gamma()) - OP.compute_gamma(),
             "theta": n * (OC1.compute_theta() - OC2.compute_theta()) - OP.compute_theta,
             "rho": n * (OC1.compute_rho() - OC2.compute_rho()) - OP.compute_rho(),
-            "vega": n * (OC1.compute_vega() - OC2.compute_vega()) - OP.compute_vega(),
+            "vega": n * (OC1.compute_vega() - OC2.compute_vega()) - OP.compute_vega()
         }
