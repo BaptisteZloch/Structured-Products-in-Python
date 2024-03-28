@@ -55,14 +55,15 @@ class ReverseConvertible(StructuredProductBase):
         return self._price
         
     
-    def compute_greeks(self) -> Dict[str, float]:
+    def compute_greeks(self, eps: Optional[float] = 0.01) -> Dict[str, float]:
         dico = self.decompositon()
-        option = dico["option"]        
+        option = dico["option"]
+        bond = dico["bond"]        
         return {
             "delta": - (1-self.__converse_rate) * option.compute_delta(),
             "gamma": - (1-self.__converse_rate) * option.compute_gamma(),
             "theta": - (1-self.__converse_rate) * option.compute_theta(),
-            "rho": - (1-self.__converse_rate) * option.compute_rho(),
+            "rho": bond.compute_rho(eps) - (1-self.__converse_rate) * option.compute_rho(),
             "vega": - (1-self.__converse_rate) * option.compute_vega()
         }
 
@@ -141,8 +142,9 @@ class OutperformerCertificate(StructuredProductBase):
         return self._price
     
 
-    def compute_greeks(self) -> Dict[str, float]:
+    def compute_greeks(self, eps: Optional[float] = 0.01) -> Dict[str, float]:
         dico = self.decomposition()
+        bond = dico["bond"]
         OC1 = dico["option_call1"]
         OC2 = dico["option_call2"]
         OP = dico["option_put"]
@@ -151,6 +153,6 @@ class OutperformerCertificate(StructuredProductBase):
             "delta": n * (OC1.compute_delta() - OC2.compute_delta()) - OP.compute_delta(),
             "gamma": n * (OC1.compute_gamma() - OC2.compute_gamma()) - OP.compute_gamma(),
             "theta": n * (OC1.compute_theta() - OC2.compute_theta()) - OP.compute_theta,
-            "rho": n * (OC1.compute_rho() - OC2.compute_rho()) - OP.compute_rho(),
+            "rho": bond.compute_rho(eps) + n * (OC1.compute_rho() - OC2.compute_rho()) - OP.compute_rho(),
             "vega": n * (OC1.compute_vega() - OC2.compute_vega()) - OP.compute_vega()
         }
