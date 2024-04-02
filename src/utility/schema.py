@@ -126,20 +126,32 @@ class BondBaseModel(ZeroCouponBondBaseModel):
     nb_coupon: int = Field(default=1, description="Number of coupons in the bond", gt=0)
 
 
-class ReverseConvertibleBaseModel(BaseModel):
-    pass
-
-
-class OutperformerCertificateBaseModel(BaseModel):
-    spot_price: float
-    maturity: float
+class StructuredProduct(BaseModel):
+    spot_price: float = Field(..., description="Spot price of the underlying")
+    dividend: Optional[float] = Field(default=0.0, description="Dividend yield")
     rate: Optional[float] = Field(default=None, description="Interest rates")
     rate_curve: Optional[Dict[str, float]] = Field(
         default=None,
         description="Interest rates curve dictionary maturity as keys and rates as values",
     )
+    volatility: Optional[float] = Field(
+        default=None, description="The implied volatility"
+    )
+    volatility_surface: Optional[Dict[str, Dict[str, float]]] = Field(
+        default=None, description="The implied volatility"
+    )
     nominal: int
+
+
+class ReverseConvertibleBaseModel(StructuredProduct):
+    maturity: float = Field(..., description="Maturity in years")
+    strike_price: float = Field(..., description="Spot price of the underlying")
+    converse_rate: float
+
+
+class OutperformerCertificateBaseModel(StructuredProduct):
+    maturity1: float = Field(..., description="Maturity in years")
+    maturity2: float = Field(..., description="Maturity in years")
     strike_price1: float
     strike_price2: float
-    volatility: float
     n_call: int

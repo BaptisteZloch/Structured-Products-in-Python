@@ -50,9 +50,51 @@ app.add_middleware(
 )
 def structured_product_pricing(
     product_kind: ProductKindType,
-    product: Union[ReverseConvertibleBaseModel, OutperformerCertificateBaseModel],
+    product: Union[OutperformerCertificateBaseModel, ReverseConvertibleBaseModel],
     pricing_service: PricingService = Depends(PricingService),
 ) -> Dict[str, float]:
+    """Outperformer json body :
+    ```json
+    {
+
+            "maturity1": 1,
+            "maturity2": 2,
+            "spot_price":100,
+            "rate": 0.03,
+            "nominal":1000,
+            "dividend":0.0,
+            "volatility":0.20,
+            "n_call":3,
+            "strike_price1": 100,
+            "strike_price2": 120
+    }
+    ```
+    ```json
+    RC Json body :
+    {
+            "spot_price":100,
+            "maturity": 1,
+            "rate": 0.03,
+            "nominal":1000,
+            "dividend":0.0,
+            "volatility":0.20,
+            "strike_price": 100,
+            "converse_rate":0.02
+    }
+    ```
+
+    Args:
+        product_kind (ProductKindType): _description_
+        product (Union[OutperformerCertificateBaseModel,ReverseConvertibleBaseModel]): _description_
+        pricing_service (PricingService, optional): _description_. Defaults to Depends(PricingService).
+
+    Raises:
+        ValueError: _description_
+        HTTPException: _description_
+
+    Returns:
+        Dict[str, float]: _description_
+    """
     try:
         if product_kind == "reverse-convertible" and isinstance(
             product, ReverseConvertibleBaseModel

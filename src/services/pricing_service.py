@@ -88,6 +88,16 @@ class PricingService:
         request_received_model: OutperformerCertificateBaseModel,
     ) -> Dict[str, float]:
         product_dict = request_received_model.model_dump(exclude_unset=True)
+        product_dict = PricingService.__handle_rate_and_rate_curve_base_model(
+            product_dict
+        )
+        product_dict["maturity1"] = Maturity(maturity_in_years=product_dict["maturity1"])
+        product_dict["maturity2"] = Maturity(maturity_in_years=product_dict["maturity2"])
+
+        product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
+            product_dict
+        )
+        
         opt = OutperformerCertificate(**product_dict)
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
@@ -96,6 +106,14 @@ class PricingService:
         request_received_model: ReverseConvertibleBaseModel,
     ) -> Dict[str, float]:
         product_dict = request_received_model.model_dump(exclude_unset=True)
+        product_dict = PricingService.__handle_rate_and_rate_curve_base_model(
+            product_dict
+        )
+        product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
+
+        product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
+            product_dict
+        )
         opt = ReverseConvertible(**product_dict)
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
@@ -332,12 +350,6 @@ class PricingService:
             volatility=product_dict["volatility"],
             dividend=product_dict["dividend"],
         )
-        print("price")
-        opt.compute_price()
-        print("price2")
-        opt.compute_greeks()
-        print("priceGreek")
-
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
