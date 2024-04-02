@@ -25,11 +25,13 @@ class VanillaOption(OptionBase):
     def compute_price(self):
         if self._option_type == "call":
             return self._spot_price * norm.cdf(self._d1) - self._strike_price * np.exp(
-                -(self._rate.get_rate(self._maturity)-self._dividend) * self._maturity.maturity_in_years
+                -(self._rate.get_rate(self._maturity) - self._dividend)
+                * self._maturity.maturity_in_years
             ) * norm.cdf(self._d2)
         elif self._option_type == "put":
             return self._strike_price * np.exp(
-                -(self._rate.get_rate(self._maturity)-self._dividend) * self._maturity.maturity_in_years
+                -(self._rate.get_rate(self._maturity) - self._dividend)
+                * self._maturity.maturity_in_years
             ) * norm.cdf(-self._d2) - self._spot_price * norm.cdf(-self._d1)
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
@@ -48,7 +50,9 @@ class VanillaOption(OptionBase):
         d1 = self._d1
         gamma = norm.pdf(d1) / (
             self._spot_price
-            * self._volatility.get_volatility()
+            * self._volatility.get_volatility(
+                self._strike_price / self._spot_price, self._maturity.maturity_in_years
+            )
             * np.sqrt(self._maturity.maturity_in_years)
         )
         return gamma
@@ -58,21 +62,33 @@ class VanillaOption(OptionBase):
         d2 = self._d2
         if self._option_type == "call":
             theta = (
-                -self._spot_price * norm.pdf(d1) * self._volatility.get_volatility()
+                -self._spot_price
+                * norm.pdf(d1)
+                * self._volatility.get_volatility(
+                    self._strike_price / self._spot_price,
+                    self._maturity.maturity_in_years,
+                )
             ) / (2 * np.sqrt(self._maturity.maturity_in_years)) - self._rate.get_rate(
                 self._maturity
             ) * self._strike_price * np.exp(
-                -(self._rate.get_rate(self._maturity)-self._dividend) * self._maturity.maturity_in_years
+                -(self._rate.get_rate(self._maturity) - self._dividend)
+                * self._maturity.maturity_in_years
             ) * norm.cdf(
                 d2
             )
         elif self._option_type == "put":
             theta = (
-                -self._spot_price * norm.pdf(d1) * self._volatility.get_volatility()
+                -self._spot_price
+                * norm.pdf(d1)
+                * self._volatility.get_volatility(
+                    self._strike_price / self._spot_price,
+                    self._maturity.maturity_in_years,
+                )
             ) / (2 * np.sqrt(self._maturity.maturity_in_years)) + self._rate.get_rate(
                 self._maturity
             ) * self._strike_price * np.exp(
-                -(self._rate.get_rate(self._maturity)-self._dividend) * self._maturity.maturity_in_years
+                -(self._rate.get_rate(self._maturity) - self._dividend)
+                * self._maturity.maturity_in_years
             ) * norm.cdf(
                 -d2
             )
@@ -97,7 +113,7 @@ class VanillaOption(OptionBase):
                 self._strike_price
                 * self._maturity.maturity_in_years
                 * np.exp(
-                    -(self._rate.get_rate(self._maturity)-self._dividend)
+                    -(self._rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * norm.cdf(d2)
@@ -108,7 +124,7 @@ class VanillaOption(OptionBase):
                 -self._strike_price
                 * self._maturity.maturity_in_years
                 * np.exp(
-                    -(self._rate.get_rate(self._maturity)-self._dividend)
+                    -(self._rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * norm.cdf(-d2)
