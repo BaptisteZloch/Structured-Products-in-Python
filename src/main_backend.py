@@ -96,6 +96,30 @@ def option_pricing(
             "option_type": "call"
         }
         {
+        "spot_price":100,
+        "strike_price": 110,
+        "maturity": 1,
+        "rate": 0.03,
+        "dividend":0.0,
+        "volatility_surface":{
+        "1.0": {
+            "0.9": 0.14,
+            "1.0": 0.10,
+            "1.1": 0.12
+        },
+        "1.5": {
+            "0.9": 0.13,
+            "1.0": 0.09,
+            "1.1": 0.13
+        },
+        "2.0": {
+            "0.9": 0.10,
+            "1.0": 0.1,
+            "1.1": 0.08
+        }},
+        "option_type": "call"
+        }
+        {
             "spot_price":80,
             "strike_price": 100,
             "maturity": 0.5,
@@ -166,6 +190,8 @@ def option_strategy_pricing(
             "strip",
             "strap",
         ], "Error provide a valid strategy among: straddle, strangle, butterfly, call-spread, put-spread, strip, strap"
+        print(product)
+        print(type(product))
         if option_strategy == "straddle" and isinstance(
             product, StraddleStrategyBaseModel
         ):

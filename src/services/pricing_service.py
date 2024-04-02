@@ -322,6 +322,7 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
+
         opt = StripStrategy(
             spot_price=product_dict["spot_price"],
             strike_price1=product_dict["strike_price1"],
@@ -331,6 +332,11 @@ class PricingService:
             volatility=product_dict["volatility"],
             dividend=product_dict["dividend"],
         )
+        print("price")
+        opt.compute_price()
+        print("price2")
+        opt.compute_greeks()
+        print("priceGreek")
 
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 

@@ -14,14 +14,14 @@ class OptionStrategy(ABC):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
-        foreign_rate: Optional[Rate] = None, 
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         self._spot_price = spot_price
         self._maturity = maturity
         self._rate = rate
         self._volatility = volatility
         self._dividend = dividend if dividend is not None else 0.0
-        self._foreign_rate = foreign_rate  
+        self._foreign_rate = foreign_rate
 
     @abstractmethod
     def compute_greeks(self):
@@ -37,8 +37,7 @@ class StraddleStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
-        foreign_rate: Optional[Rate] = None, 
-
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         self._strike_price = strike_price
@@ -63,7 +62,7 @@ class StraddleStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
-                self._foreign_rate
+                self._foreign_rate,
             ).compute_price()
         )
 
@@ -87,7 +86,7 @@ class StrangleStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
-        foreign_rate: Optional[Rate] = None, 
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         """_summary_
 
@@ -151,7 +150,7 @@ class ButterflyStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
-        foreign_rate: Optional[Rate] = None, 
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
@@ -215,7 +214,7 @@ class CallSpreadStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
-        foreign_rate: Optional[Rate] = None, 
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
@@ -232,9 +231,9 @@ class CallSpreadStrategy(OptionStrategy):
                 self._maturity,
                 self._rate,
                 self._volatility,
-                "call",
-                self._dividend,
-                self._foreign_rate,
+                option_type="call",
+                dividend=self._dividend,
+                foreign_rate=self._foreign_rate,
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
@@ -268,7 +267,7 @@ class PutSpreadStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
-        foreign_rate: Optional[Rate] = None, 
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
@@ -321,7 +320,7 @@ class StripStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
-        foreign_rate: Optional[Rate] = None, 
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
@@ -336,21 +335,22 @@ class StripStrategy(OptionStrategy):
             * VanillaOption(
                 self._spot_price,
                 self._strike_price2,
-                self._maturity,
-                self._rate,
-                self._volatility,
-                self._foreign_rate,
-                "put",
+                maturity=self._maturity,
+                rate=self._rate,
+                dividend=self._dividend,
+                volatility=self._volatility,
+                foreign_rate=self._foreign_rate,
+                option_type="put",
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
                 self._strike_price1,
                 self._maturity,
-                self._rate,
-                self._volatility,
-                "put",
-                self._dividend,
-                self._foreign_rate,
+                rate=self._rate,
+                volatility=self._volatility,
+                option_type="put",
+                dividend=self._dividend,
+                foreign_rate=self._foreign_rate,
             ).compute_price()
         )
 

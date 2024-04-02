@@ -19,12 +19,16 @@ class OptionBaseModel(BaseModel):
     maturity: float = Field(..., description="Maturity in years")
     dividend: Optional[float] = Field(default=0.0, description="Dividend yield")
     rate: Optional[float] = Field(default=None, description="Interest rates")
-    foreign_rate: Optional[float] = Field(default=None, description="Foreign interest rate for FX options")
+    foreign_rate: Optional[float] = Field(
+        default=None, description="Foreign interest rate for FX options"
+    )
     rate_curve: Optional[Dict[str, float]] = Field(
         default=None,
         description="Interest rates curve dictionary maturity as keys and rates as values",
     )
-    volatility: Optional[float] = Field(default=None, description="The implied volatility")
+    volatility: Optional[float] = Field(
+        default=None, description="The implied volatility"
+    )
     volatility_surface: Optional[Dict[str, Dict[str, float]]] = Field(
         default=None, description="The implied volatility"
     )
@@ -61,6 +65,15 @@ class OptionStrategyBaseModel(BaseModel):
     volatility: Optional[float] = Field(
         default=None, description="The implied volatility"
     )
+    volatility_surface: Optional[Dict[str, Dict[str, float]]] = Field(
+        default=None, description="The implied volatility"
+    )
+    # Maturity en première clé et Strike en seconde
+    # {
+    #     '0.3':{'0.9':0.14,'1':0.14,'1.1':0.14,},
+    #     '0.5':{'0.9':0.14,1:0.14,'1.1':0.14,},
+    #     1:{'0.9':0.14,'1':0.14,'1.1':0.14,},
+    # }
     # volatility_surface: Optional[float] = Field(default=None, description="The implied volatility")
 
 
@@ -84,19 +97,16 @@ class CallSpreadStrategyBaseModel(OptionStrategyBaseModel):
     upper_strike: float
 
 
-class PutSpreadStrategyBaseModel(OptionStrategyBaseModel):
-    lower_strike: float
-    upper_strike: float
+class PutSpreadStrategyBaseModel(CallSpreadStrategyBaseModel):
+    pass
 
 
-class StripStrategyBaseModel(OptionStrategyBaseModel):
-    strike_price1: float
-    strike_price2: float
+class StripStrategyBaseModel(StrangleStrategyBaseModel):
+    pass
 
 
-class StrapStrategyBaseModel(OptionStrategyBaseModel):
-    strike_price1: float
-    strike_price2: float
+class StrapStrategyBaseModel(StripStrategyBaseModel):
+    pass
 
 
 class ZeroCouponBondBaseModel(BaseModel):
