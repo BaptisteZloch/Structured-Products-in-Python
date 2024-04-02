@@ -23,8 +23,7 @@ class OptionBaseModel(BaseModel):
         default=None,
         description="Interest rates curve dictionary maturity as keys and rates as values",
     )
-    volatility: float
-    # volatility: Optional[float] = Field(default=None, description="The implied volatility")
+    volatility: Optional[float] = Field(default=None, description="The implied volatility")
     volatility_surface: Optional[Dict[str, Dict[str, float]]] = Field(
         default=None, description="The implied volatility"
     )

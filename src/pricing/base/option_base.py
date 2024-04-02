@@ -40,11 +40,11 @@ class OptionBase(ABC):
             np.log(self._spot_price / self._strike_price)
             + (
                 (self._rate.get_rate(self._maturity) - self._dividend)
-                + 0.5 * self._volatility.get_volatility() ** 2
+                + 0.5 * self._volatility.get_volatility(self._strike_price/self._spot_price, self._maturity.maturity_in_years) ** 2
             )
             * self._maturity.maturity_in_years
         ) / (
-            self._volatility.get_volatility()
+            self._volatility.get_volatility(self._strike_price/self._spot_price, self._maturity.maturity_in_years)
             * np.sqrt(self._maturity.maturity_in_years)
         )
 
@@ -59,13 +59,13 @@ class OptionBase(ABC):
             np.log(self._spot_price / self._strike_price)
             + (
                 (self._rate.get_rate(self._maturity) - self._dividend)
-                + 0.5 * self._volatility.get_volatility() ** 2
+                + 0.5 * self._volatility.get_volatility(self._strike_price/self._spot_price, self._maturity.maturity_in_years) ** 2
             )
             * self._maturity.maturity_in_years
         ) / (
-            self._volatility.get_volatility()
+            self._volatility.get_volatility(self._strike_price/self._spot_price, self._maturity.maturity_in_years)
             * np.sqrt(self._maturity.maturity_in_years)
-        ) - self._volatility.get_volatility() * np.sqrt(
+        ) - self._volatility.get_volatility(self._strike_price/self._spot_price, self._maturity.maturity_in_years) * np.sqrt(
             self._maturity.maturity_in_years
         )
 
@@ -99,9 +99,9 @@ class OptionBase(ABC):
         dt = self._maturity.maturity_in_years / num_steps
         nudt = (
             (self._rate.get_rate(self._maturity) - self._dividend)
-            - 0.5 * self._volatility.get_volatility() ** 2
+            - 0.5 * self._volatility.get_volatility(self._strike_price/self._spot_price, self._maturity.maturity_in_years) ** 2
         ) * dt
-        volsdt = self._volatility.get_volatility() * np.sqrt(dt)
+        volsdt = self._volatility.get_volatility(self._strike_price/self._spot_price, self._maturity.maturity_in_years) * np.sqrt(dt)
         paths = np.zeros((num_paths, num_steps + 1))
         paths[:, 0] = self._spot_price
 

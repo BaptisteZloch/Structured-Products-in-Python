@@ -47,7 +47,10 @@ class BinaryOption(OptionBase):
                 * norm.pdf(d2)
                 / (
                     self._spot_price
-                    * self._volatility.get_volatility()
+                    * self._volatility.get_volatility(
+                        self._strike_price / self._spot_price,
+                        self._maturity.maturity_in_years,
+                    )
                     * np.sqrt(self._maturity.maturity_in_years)
                 )
             )
@@ -60,7 +63,10 @@ class BinaryOption(OptionBase):
                 * norm.pdf(-d2)
                 / (
                     self._spot_price
-                    * self._volatility.get_volatility()
+                    * self._volatility.get_volatility(
+                        self._strike_price / self._spot_price,
+                        self._maturity.maturity_in_years,
+                    )
                     * np.sqrt(self._maturity.maturity_in_years)
                 )
             )
@@ -73,7 +79,9 @@ class BinaryOption(OptionBase):
         d2 = self._d2
         tau = self._maturity.maturity_in_years
         S = self._spot_price
-        sigma = self._volatility.get_volatility()
+        sigma = self._volatility.get_volatility(
+            self._strike_price / self._spot_price, self._maturity.maturity_in_years
+        )
         r = self._rate.get_rate(self._maturity) - self._dividend
 
         if self._option_type == "call":
@@ -96,7 +104,10 @@ class BinaryOption(OptionBase):
                 )
                 * d1
                 * norm.pdf(d2)
-                / self._volatility.get_volatility()
+                / self._volatility.get_volatility(
+                    self._strike_price / self._spot_price,
+                    self._maturity.maturity_in_years,
+                )
             )
         elif self._option_type == "put":
             vega = (
@@ -106,7 +117,10 @@ class BinaryOption(OptionBase):
                 )
                 * d1
                 * norm.pdf(d2)
-                / self._volatility.get_volatility()
+                / self._volatility.get_volatility(
+                    self._strike_price / self._spot_price,
+                    self._maturity.maturity_in_years,
+                )
             )
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
@@ -123,7 +137,10 @@ class BinaryOption(OptionBase):
                 * (
                     np.sqrt(self._maturity.maturity_in_years)
                     * norm.pdf(d2)
-                    / self._volatility.get_volatility()
+                    / self._volatility.get_volatility(
+                        self._strike_price / self._spot_price,
+                        self._maturity.maturity_in_years,
+                    )
                     - self._maturity.maturity_in_years * norm.cdf(d2)
                 )
                 / 100
@@ -137,7 +154,10 @@ class BinaryOption(OptionBase):
                 * (
                     -np.sqrt(self._maturity.maturity_in_years)
                     * norm.pdf(-d2)
-                    / self._volatility.get_volatility()
+                    / self._volatility.get_volatility(
+                        self._strike_price / self._spot_price,
+                        self._maturity.maturity_in_years,
+                    )
                     - self._maturity.maturity_in_years * norm.cdf(-d2)
                 )
                 / 100
@@ -151,7 +171,9 @@ class BinaryOption(OptionBase):
         tau = self._maturity.maturity_in_years
         S = self._spot_price
         K = self._strike_price
-        sigma = self._volatility.get_volatility()
+        sigma = self._volatility.get_volatility(
+            self._strike_price / self._spot_price, self._maturity.maturity_in_years
+        )
         r = self._rate.get_rate(self._maturity) - self._dividend
 
         common_factor = (

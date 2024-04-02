@@ -73,12 +73,10 @@ class PricingService:
                     .get(str(comb[0]))
                     .get(str(comb[-1]), int(comb[-1]))
                 )
-                base_model_dict["volatility_surface"] = Volatility(
-                    volatility_surface=volatility_surface
-                )
-                base_model_dict["volatility"] = base_model_dict.pop(
-                    "volatility_surface"
-                )
+            base_model_dict["volatility_surface"] = Volatility(
+                volatility_surface=volatility_surface
+            )
+            base_model_dict["volatility"] = base_model_dict.pop("volatility_surface")
         else:
             raise ValueError(
                 "Error, provide either volatility or volatility_surface argument"
