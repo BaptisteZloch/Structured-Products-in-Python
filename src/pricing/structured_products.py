@@ -2,6 +2,7 @@ from typing import Dict, Optional
 from src.pricing.base.structured_products_base import StructuredProductBase
 from src.pricing.base.volatility import Volatility
 from src.pricing.fixed_income import ZeroCouponBond
+from src.pricing.vanilla_options import VanillaOption
 from src.pricing.binary_options import BinaryOption
 from src.pricing.base.rate import Rate
 from src.utility.types import Maturity
@@ -31,15 +32,14 @@ class ReverseConvertible(StructuredProductBase):
 
     def decomposition(self) -> Dict:
         bond = ZeroCouponBond(self.__rate, self.__maturity, self.__nominal)
-        option = BinaryOption(
-            self.__spot_price,
-            self.__strike_price,
-            self.__maturity,
-            self.__rate,
-            self.__volatility,
-            "put",
-            self.__dividend,
-        )
+        option = VanillaOption(
+            self.__spot_price, 
+            self.__strike_price, 
+            self.__maturity, 
+            self.__rate, self.__volatility, 
+            "put", 
+            self.__dividend)
+
         return {"bond": bond, "option": option}
 
     def compute_price(self) -> float:
