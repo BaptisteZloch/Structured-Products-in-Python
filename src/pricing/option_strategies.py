@@ -65,16 +65,36 @@ class StraddleStrategy(OptionStrategy):
                 self._foreign_rate,
             ).compute_price()
         )
-
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+        call_option = VanillaOption(
+            self._spot_price,
+            self._strike_price,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
+        put_option = VanillaOption(
+            self._spot_price,
+            self._strike_price,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
 
+        call_greeks = call_option.compute_greeks()
+        put_greeks = put_option.compute_greeks()
+
+        combined_greeks = {
+            greek: call_greeks[greek] + put_greeks[greek] for greek in call_greeks
+        }
+        
+        return combined_greeks
 
 class StrangleStrategy(OptionStrategy):
     def __init__(
@@ -130,13 +150,35 @@ class StrangleStrategy(OptionStrategy):
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
+        lower_strike_call = VanillaOption(
+            self._spot_price,
+            self._strike_price1,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
+        higher_strike_put = VanillaOption(
+            self._spot_price,
+            self._strike_price2,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
+
+        call_greeks = lower_strike_call.compute_greeks()
+        put_greeks = higher_strike_put.compute_greeks()
+
+        combined_greeks = {
+            greek: call_greeks[greek] + put_greeks[greek] for greek in call_greeks
         }
+        
+        return combined_greeks
 
 
 class ButterflyStrategy(OptionStrategy):
@@ -195,13 +237,46 @@ class ButterflyStrategy(OptionStrategy):
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+            long_call_low = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            short_call_mid = VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            long_call_high = VanillaOption(
+                self._spot_price,
+                self._strike_price3,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+
+            low_greeks = long_call_low.compute_greeks()
+            mid_greeks = short_call_mid.compute_greeks()
+            high_greeks = long_call_high.compute_greeks()
+
+            combined_greeks = {
+                greek: low_greeks[greek] - 2 * mid_greeks[greek] + high_greeks[greek] for greek in low_greeks
+            }
+            
+            return combined_greeks
 
 
 class CallSpreadStrategy(OptionStrategy):
@@ -248,14 +323,35 @@ class CallSpreadStrategy(OptionStrategy):
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+        long_call = VanillaOption(
+            self._spot_price,
+            self._lower_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
+        short_call = VanillaOption(
+            self._spot_price,
+            self._upper_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
 
+        long_call_greeks = long_call.compute_greeks()
+        short_call_greeks = short_call.compute_greeks()
+
+        combined_greeks = {
+            greek: long_call_greeks[greek] - short_call_greeks[greek] for greek in long_call_greeks
+        }
+        
+        return combined_greeks
 
 class PutSpreadStrategy(OptionStrategy):
     def __init__(
@@ -299,15 +395,37 @@ class PutSpreadStrategy(OptionStrategy):
                 self._foreign_rate,
             ).compute_price()
         )
-
+        
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
+        long_put = VanillaOption(
+            self._spot_price,
+            self._upper_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
+        short_put = VanillaOption(
+            self._spot_price,
+            self._lower_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
+
+        long_put_greeks = long_put.compute_greeks()
+        short_put_greeks = short_put.compute_greeks()
+
+        combined_greeks = {
+            greek: long_put_greeks[greek] - short_put_greeks[greek] for greek in long_put_greeks
         }
+        
+        return combined_greeks
 
 
 class StripStrategy(OptionStrategy):
@@ -355,14 +473,47 @@ class StripStrategy(OptionStrategy):
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+    
+            call_option = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            put_option1 = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+                self._dividend,
+                self._foreign_rate,
+            )
+            put_option2 = VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+                self._dividend,
+                self._foreign_rate,
+            )
 
+            call_greeks = call_option.compute_greeks()
+            put_greeks1 = put_option1.compute_greeks()
+            put_greeks2 = put_option2.compute_greeks()
+
+            combined_greeks = {
+                greek: call_greeks[greek] + put_greeks1[greek] + put_greeks2[greek] for greek in call_greeks
+            }
+            
+            return combined_greeks
 
 class StrapStrategy(OptionStrategy):
     def __init__(
@@ -409,10 +560,43 @@ class StrapStrategy(OptionStrategy):
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+            call_option1 = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            call_option2 = VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            put_option = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+                self._dividend,
+                self._foreign_rate,
+            )
+
+            call_greeks1 = call_option1.compute_greeks()
+            call_greeks2 = call_option2.compute_greeks()
+            put_greeks = put_option.compute_greeks()
+
+            combined_greeks = {
+                greek: call_greeks1[greek] + call_greeks2[greek] + put_greeks[greek] for greek in call_greeks1
+            }
+            
+            return combined_greeks
