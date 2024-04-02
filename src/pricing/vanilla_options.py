@@ -69,10 +69,10 @@ class VanillaOption(OptionBase):
                     self._strike_price / self._spot_price,
                     self._maturity.maturity_in_years,
                 )
-            ) / (2 * np.sqrt(self._maturity.maturity_in_years)) - self._rate.get_rate(
+            ) / (2 * np.sqrt(self._maturity.maturity_in_years)) - self._domestic_rate.get_rate(
                 self._maturity
             ) * self._strike_price * np.exp(
-                -(self._rate.get_rate(self._maturity) - self._dividend)
+                -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                 * self._maturity.maturity_in_years
             ) * norm.cdf(
                 d2
@@ -85,10 +85,10 @@ class VanillaOption(OptionBase):
                     self._strike_price / self._spot_price,
                     self._maturity.maturity_in_years,
                 )
-            ) / (2 * np.sqrt(self._maturity.maturity_in_years)) + self._rate.get_rate(
+            ) / (2 * np.sqrt(self._maturity.maturity_in_years)) + self._domestic_rate.get_rate(
                 self._maturity
             ) * self._strike_price * np.exp(
-                -(self._rate.get_rate(self._maturity) - self._dividend)
+                -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                 * self._maturity.maturity_in_years
             ) * norm.cdf(
                 -d2
@@ -114,7 +114,7 @@ class VanillaOption(OptionBase):
                 self._strike_price
                 * self._maturity.maturity_in_years
                 * np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * norm.cdf(d2)
@@ -125,7 +125,7 @@ class VanillaOption(OptionBase):
                 -self._strike_price
                 * self._maturity.maturity_in_years
                 * np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * norm.cdf(-d2)

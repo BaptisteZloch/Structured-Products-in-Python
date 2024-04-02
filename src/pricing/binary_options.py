@@ -6,6 +6,7 @@ from src.pricing.base.volatility import Volatility
 from src.pricing.base.rate import Rate
 from src.utility.types import Maturity, OptionType
 
+
 class BinaryOption(OptionBase):
     def __init__(
         self,
@@ -19,16 +20,31 @@ class BinaryOption(OptionBase):
         foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__(
-            spot_price, strike_price, maturity, rate, volatility, option_type, dividend, foreign_rate
+            spot_price,
+            strike_price,
+            maturity,
+            rate,
+            volatility,
+            option_type,
+            dividend,
+            foreign_rate,
         )
 
     def compute_price(self) -> float:
-        effective_rate = self._domestic_rate.get_rate(self._maturity) - (self._foreign_rate.get_rate(self._maturity) if self._foreign_rate else self._dividend)
+        effective_rate = self._domestic_rate.get_rate(self._maturity) - (
+            self._foreign_rate.get_rate(self._maturity)
+            if self._foreign_rate
+            else self._dividend
+        )
 
         if self._option_type == "call":
-            price = np.exp(-effective_rate * self._maturity.maturity_in_years) * norm.cdf(self._d2)
+            price = np.exp(
+                -effective_rate * self._maturity.maturity_in_years
+            ) * norm.cdf(self._d2)
         elif self._option_type == "put":
-            price = np.exp(-effective_rate * self._maturity.maturity_in_years) * norm.cdf(-self._d2)
+            price = np.exp(
+                -effective_rate * self._maturity.maturity_in_years
+            ) * norm.cdf(-self._d2)
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
         return price
@@ -38,7 +54,7 @@ class BinaryOption(OptionBase):
         if self._option_type == "call":
             delta = (
                 np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * norm.pdf(d2)
@@ -54,7 +70,7 @@ class BinaryOption(OptionBase):
         elif self._option_type == "put":
             delta = (
                 -np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * norm.pdf(-d2)
@@ -79,7 +95,7 @@ class BinaryOption(OptionBase):
         sigma = self._volatility.get_volatility(
             self._strike_price / self._spot_price, self._maturity.maturity_in_years
         )
-        r = self._rate.get_rate(self._maturity) - self._dividend
+        r = self._domestic_rate.get_rate(self._maturity) - self._dividend
 
         if self._option_type == "call":
             gamma = -np.exp(-r * tau) * norm.pdf(d2) * d1 / (S**2 * sigma**2 * tau)
@@ -96,7 +112,7 @@ class BinaryOption(OptionBase):
         if self._option_type == "call":
             vega = (
                 np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * d1
@@ -109,7 +125,7 @@ class BinaryOption(OptionBase):
         elif self._option_type == "put":
             vega = (
                 -np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * d1
@@ -128,7 +144,7 @@ class BinaryOption(OptionBase):
         if self._option_type == "call":
             rho = (
                 np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * (
@@ -145,7 +161,7 @@ class BinaryOption(OptionBase):
         elif self._option_type == "put":
             rho = (
                 np.exp(
-                    -(self._rate.get_rate(self._maturity) - self._dividend)
+                    -(self._domestic_rate.get_rate(self._maturity) - self._dividend)
                     * self._maturity.maturity_in_years
                 )
                 * (
@@ -171,7 +187,7 @@ class BinaryOption(OptionBase):
         sigma = self._volatility.get_volatility(
             self._strike_price / self._spot_price, self._maturity.maturity_in_years
         )
-        r = self._rate.get_rate(self._maturity) - self._dividend
+        r = self._domestic_rate.get_rate(self._maturity) - self._dividend
 
         common_factor = (
             np.exp(-r * tau) * norm.pdf(d2) / (2 * tau * sigma * np.sqrt(tau))
