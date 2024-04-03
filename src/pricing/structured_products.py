@@ -3,7 +3,6 @@ from src.pricing.base.structured_products_base import StructuredProductBase
 from src.pricing.base.volatility import Volatility
 from src.pricing.fixed_income import ZeroCouponBond
 from src.pricing.vanilla_options import VanillaOption
-from src.pricing.binary_options import BinaryOption
 from src.pricing.base.rate import Rate
 from src.utility.types import Maturity
 
@@ -90,7 +89,7 @@ class OutperformerCertificate(StructuredProductBase):
         self.__foreign_rate = foreign_rate
 
     def decomposition(self, atm: Optional[bool] = False) -> Dict:
-        option_call1 = BinaryOption(
+        option_call1 = VanillaOption(
             self.__spot_price,
             0,
             self.__maturity,
@@ -103,7 +102,7 @@ class OutperformerCertificate(StructuredProductBase):
         
         spot = (1-atm)*self.__spot_price + atm*self.__strike_price
         
-        option_call2 = BinaryOption(
+        option_call2 = VanillaOption(
             spot,
             self.__strike_price,
             self.__maturity,
