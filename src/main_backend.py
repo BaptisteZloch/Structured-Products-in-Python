@@ -50,9 +50,51 @@ app.add_middleware(
 )
 def structured_product_pricing(
     product_kind: ProductKindType,
-    product: Union[ReverseConvertibleBaseModel, OutperformerCertificateBaseModel],
+    product: Union[OutperformerCertificateBaseModel, ReverseConvertibleBaseModel],
     pricing_service: PricingService = Depends(PricingService),
 ) -> Dict[str, float]:
+    """Outperformer json body :
+    ```json
+    {
+
+            "maturity1": 1,
+            "maturity2": 2,
+            "spot_price":100,
+            "rate": 0.03,
+            "nominal":1000,
+            "dividend":0.0,
+            "volatility":0.20,
+            "n_call":3,
+            "strike_price1": 100,
+            "strike_price2": 120
+    }
+    ```
+    ```json
+    RC Json body :
+    {
+            "spot_price":100,
+            "maturity": 1,
+            "rate": 0.03,
+            "nominal":1000,
+            "dividend":0.0,
+            "volatility":0.20,
+            "strike_price": 100,
+            "converse_rate":0.02
+    }
+    ```
+
+    Args:
+        product_kind (ProductKindType): _description_
+        product (Union[OutperformerCertificateBaseModel,ReverseConvertibleBaseModel]): _description_
+        pricing_service (PricingService, optional): _description_. Defaults to Depends(PricingService).
+
+    Raises:
+        ValueError: _description_
+        HTTPException: _description_
+
+    Returns:
+        Dict[str, float]: _description_
+    """
     try:
         if product_kind == "reverse-convertible" and isinstance(
             product, ReverseConvertibleBaseModel
@@ -74,40 +116,77 @@ def structured_product_pricing(
 @app.post("/api/v1/price/option/{option_kind}", response_model=PricingResultBaseModel)
 def option_pricing(
     option_kind: OptionKindType,
-    product: Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel],
+    product: Union[BarrierOptionBaseModel, BinaryOptionBaseModel, OptionBaseModel],
     pricing_service: PricingService = Depends(PricingService),
 ) -> Dict[str, float]:
     """Send json like:
-    ```json
-    {
+        ```json
+        {
+            "spot_price":100,
+            "strike_price": 100,
+            "maturity": 1,
+            "rate": 0.05,
+            "volatility": 0.2,
+            "option_type": "call"
+        }
+        {
+            "spot_price":100,
+            "strike_price": 100,
+            "maturity": 1,
+            "rate_curve": {"0.5":0.02,"1":0.06},
+            "volatility": 0.2,
+            "option_type": "call"
+        }
+        {
         "spot_price":100,
-        "strike_price": 100,
+        "strike_price": 110,
         "maturity": 1,
-        "rate": 0.05,
-        "volatility": 0.2,
+        "rate": 0.03,
+        "dividend":0.0,
+        "volatility_surface":{
+        "1.0": {
+            "0.9": 0.14,
+            "1.0": 0.10,
+            "1.1": 0.12
+        },
+        "1.5": {
+            "0.9": 0.13,
+            "1.0": 0.09,
+            "1.1": 0.13
+        },
+        "2.0": {
+            "0.9": 0.10,
+            "1.0": 0.1,
+            "1.1": 0.08
+        }},
         "option_type": "call"
+        }
+        {
+            "spot_price":80,
+            "strike_price": 100,
+            "maturity": 0.5,
+            "rate": 0.03,
+            "dividend":0.0,
+            "volatility": 0.20,
+            "option_type": "put",
+            "barrier_level":80,
+            "barrier_type":"ki",
+            "barrier_direction":"down"
+
     }
-    {
-        "spot_price":100,
-        "strike_price": 100,
-        "maturity": 1,
-        "rate_curve": {"0.5":0.02,"1":0.06},
-        "volatility": 0.2,
-        "option_type": "call"
-    }
-    ```
+        ```
 
-    Args:
-        option_kind (OptionKindType): _description_
-        product (Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel]): _description_
-        pricing_service (PricingService, optional): _description_. Defaults to Depends(PricingService).
+        Args:
+            option_kind (OptionKindType): _description_
+            product (Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel]): _description_
+            pricing_service (PricingService, optional): _description_. Defaults to Depends(PricingService).
 
-    Raises:
-        ValueError: _description_
-        HTTPException: _description_
+        Raises:
+            ValueError: _description_
+            HTTPException: _description_
 
-    Returns:
-        Dict[str, float]: _description_
+        Returns:
+            Dict[str, float]: _description_
     """
     try:
         if option_kind == "binary" and isinstance(product, BinaryOptionBaseModel):
@@ -118,7 +197,7 @@ def option_pricing(
             return pricing_service.process_barrier_options(product)
         raise ValueError("Provide valid input.")
     except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
+        exc_type, _, exc_tb = sys.exc_info()
         raise HTTPException(
             status_code=404,
             detail=f"{e} | {exc_type} | {os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]} | {exc_tb.tb_lineno}",
@@ -133,13 +212,13 @@ def option_pricing(
 def option_strategy_pricing(
     option_strategy: OptionStrategyType,
     product: Union[
-        StraddleStrategyBaseModel,
-        StrangleStrategyBaseModel,
         ButterflyStrategyBaseModel,
-        CallSpreadStrategyBaseModel,
-        PutSpreadStrategyBaseModel,
+        StraddleStrategyBaseModel,
         StripStrategyBaseModel,
         StrapStrategyBaseModel,
+        StrangleStrategyBaseModel,
+        CallSpreadStrategyBaseModel,
+        PutSpreadStrategyBaseModel,
     ],
     pricing_service: PricingService = Depends(PricingService),
 ) -> Dict[str, float]:
@@ -153,6 +232,8 @@ def option_strategy_pricing(
             "strip",
             "strap",
         ], "Error provide a valid strategy among: straddle, strangle, butterfly, call-spread, put-spread, strip, strap"
+        print(product)
+        print(type(product))
         if option_strategy == "straddle" and isinstance(
             product, StraddleStrategyBaseModel
         ):
@@ -180,7 +261,7 @@ def option_strategy_pricing(
             return pricing_service.process_strap_strategy(product)
         raise ValueError("Provide valid input.")
     except Exception as e:
-        exc_type, exc_obj, exc_tb = sys.exc_info()
+        exc_type, _, exc_tb = sys.exc_info()
         raise HTTPException(
             status_code=404,
             detail=f"{e} | {exc_type} | {os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]} | {exc_tb.tb_lineno}",

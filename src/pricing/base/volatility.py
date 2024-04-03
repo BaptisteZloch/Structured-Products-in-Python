@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Tuple
 import matplotlib.pyplot as plt
 from scipy.interpolate import RectBivariateSpline
 import numpy as np
@@ -8,7 +8,7 @@ class Volatility:
     def __init__(
         self,
         volatility: Optional[float] = None,
-        volatility_surface: Optional[Dict] = None,
+        volatility_surface: Optional[Dict[Tuple[float, float], float]] = None,
     ) -> None:
         self.__volatility = volatility
         self.__volatility_surface = volatility_surface
