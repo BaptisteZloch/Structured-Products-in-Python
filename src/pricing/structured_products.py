@@ -53,7 +53,7 @@ class ReverseConvertible(StructuredProductBase):
 
         return self._price
 
-    def compute_greeks(self, eps: Optional[float] = 0.01) -> Dict[str, float]:
+    def compute_greeks(self) -> Dict[str, float]:
         dico = self.decomposition()
         option = dico["option"]
         bond = dico["bond"]
@@ -61,105 +61,81 @@ class ReverseConvertible(StructuredProductBase):
             "delta": -(1 - self.__converse_rate) * option.compute_delta(),
             "gamma": -(1 - self.__converse_rate) * option.compute_gamma(),
             "theta": -(1 - self.__converse_rate) * option.compute_theta(),
-            # "rho": bond.compute_rho(eps)
-            # - (1 - self.__converse_rate) * option.compute_rho(),
             "rho": (1 - self.__converse_rate) * option.compute_rho(),
             "vega": -(1 - self.__converse_rate) * option.compute_vega(),
         }
-
 
 class OutperformerCertificate(StructuredProductBase):
     def __init__(
         self,
         rate: Rate,
-        maturity1: Maturity,
-        maturity2: Maturity,
-        nominal: int,
+        maturity: Maturity,
         spot_price: float,
-        strike_price1: float,
-        strike_price2: float,
+        strike_price: float,
         volatility: Volatility,
-        n_call: float,
+        participation: float,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__("outperformer-certificate")
         self.__rate = rate
-        self.__maturity1 = maturity1
-        self.__maturity2 = maturity2
-        self.__nominal = nominal
+        self.__maturity = maturity
         self.__spot_price = spot_price
-        self.__strike_price1 = strike_price1
-        self.__strike_price2 = strike_price2
+        self.__strike_price = strike_price
         self.__volatility = volatility
-        self.__n_call = n_call
+        if participation < 1:
+            raise ValueError("Participation must be higher than 100%")
+        self.__participation = participation
         self.__dividend = dividend
+        self.__foreign_rate = foreign_rate
 
-    def decomposition(self) -> Dict:
-        bond = ZeroCouponBond(self.__rate, self.__maturity1, self.__nominal)
+    def decomposition(self, atm: Optional[bool] = False) -> Dict:
         option_call1 = BinaryOption(
             self.__spot_price,
-            self.__strike_price1,
-            self.__maturity2,
+            0,
+            self.__maturity,
             self.__rate,
             self.__volatility,
             "call",
             self.__dividend,
+            self.__foreign_rate,
         )
+        
+        spot = (1-atm)*self.__spot_price + atm*self.__strike_price
+        
         option_call2 = BinaryOption(
-            self.__spot_price,
-            self.__strike_price2,
-            self.__maturity2,
+            spot,
+            self.__strike_price,
+            self.__maturity,
             self.__rate,
             self.__volatility,
             "call",
             self.__dividend,
-        )
-        option_put = BinaryOption(
-            self.__spot_price,
-            self.__strike_price1,
-            self.__maturity2,
-            self.__rate,
-            self.__volatility,
-            "put",
-            self.__dividend,
+            self.__foreign_rate,
         )
 
         return {
-            "bond": bond,
             "option_call1": option_call1,
-            "option_call2": option_call2,
-            "option_put": option_put,
+            "option_call2": option_call2
         }
 
     def compute_price(self) -> float:
-        dico = self.decomposition()
-        n = self.__n_call
+        dico = self.decomposition(atm=True)
 
         self._price = (
-            dico["bond"].compute_price()
-            + n * dico["option_call1"].compute_price()
-            - n * dico["option_call2"].compute_price()
-            - dico["option_put"].compute_price()
+            dico["option_call1"].compute_price()
+            + (self.__participation-1) * dico["option_call2"].compute_price()
         )
         return self._price
 
-    def compute_greeks(self, eps: Optional[float] = 0.01) -> Dict[str, float]:
+    def compute_greeks(self) -> Dict[str, float]:
         dico = self.decomposition()
-        bond: ZeroCouponBond = dico["bond"]
         OC1 = dico["option_call1"]
         OC2 = dico["option_call2"]
-        OP: BinaryOption = dico["option_put"]
-        n = self.__n_call
         return {
-            "delta": n * (OC1.compute_delta() - OC2.compute_delta())
-            - OP.compute_delta(),
-            "gamma": n * (OC1.compute_gamma() - OC2.compute_gamma())
-            - OP.compute_gamma(),
-            "theta": n * (OC1.compute_theta() - OC2.compute_theta())
-            - OP.compute_theta(),
-            # "rho": bond.compute_rho(eps)
-            # + n * (OC1.compute_rho() - OC2.compute_rho())
-            # - OP.compute_rho(),
-            "rho": n * (OC1.compute_rho() - OC2.compute_rho()) - OP.compute_rho(),
-            "vega": n * (OC1.compute_vega() - OC2.compute_vega()) - OP.compute_vega(),
+            "delta": OC1.compute_delta() + (self.__participation-1) *  OC2.compute_delta(),
+            "gamma": OC1.compute_gamma() + (self.__participation-1) * OC2.compute_gamma(),
+            "theta": OC1.compute_theta() + (self.__participation-1) * OC2.compute_theta(),
+            "rho": OC1.compute_rho() + (self.__participation-1) * OC2.compute_rho(),
+            "vega": OC1.compute_vega() + (self.__participation-1) * OC2.compute_vega(),
         }
