@@ -1,4 +1,5 @@
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
+from src.pricing.base.option_base import OptionBase
 from src.pricing.base.structured_products_base import StructuredProductBase
 from src.pricing.base.volatility import Volatility
 from src.pricing.fixed_income import ZeroCouponBond
@@ -29,15 +30,17 @@ class ReverseConvertible(StructuredProductBase):
         self.__converse_rate = converse_rate
         self.__dividend = dividend
 
-    def decomposition(self) -> Dict:
+    def decomposition(self) -> Dict[str, Union[OptionBase, ZeroCouponBond]]:
         bond = ZeroCouponBond(self.__rate, self.__maturity, self.__nominal)
         option = VanillaOption(
-            self.__spot_price, 
-            self.__strike_price, 
-            self.__maturity, 
-            self.__rate, self.__volatility, 
-            "put", 
-            self.__dividend)
+            self.__spot_price,
+            self.__strike_price,
+            self.__maturity,
+            self.__rate,
+            self.__volatility,
+            "put",
+            self.__dividend,
+        )
 
         return {"bond": bond, "option": option}
 
@@ -64,6 +67,7 @@ class ReverseConvertible(StructuredProductBase):
             "vega": -(1 - self.__converse_rate) * option.compute_vega(),
         }
 
+
 class OutperformerCertificate(StructuredProductBase):
     def __init__(
         self,
@@ -87,11 +91,14 @@ class OutperformerCertificate(StructuredProductBase):
         self.__participation = participation
         self.__dividend = dividend
         self.__foreign_rate = foreign_rate
+        print(self.__strike_price)
 
-    def decomposition(self, atm: Optional[bool] = False) -> Dict:
+    def decomposition(
+        self, atm: Optional[bool] = False
+    ) -> Dict[str, Union[OptionBase, ZeroCouponBond]]:
         option_call1 = VanillaOption(
             self.__spot_price,
-            0,
+            10 ** (-9),
             self.__maturity,
             self.__rate,
             self.__volatility,
@@ -99,9 +106,8 @@ class OutperformerCertificate(StructuredProductBase):
             self.__dividend,
             self.__foreign_rate,
         )
-        
-        spot = (1-atm)*self.__spot_price + atm*self.__strike_price
-        
+
+        spot = (1 - atm) * self.__spot_price + atm * self.__strike_price
         option_call2 = VanillaOption(
             spot,
             self.__strike_price,
@@ -113,17 +119,14 @@ class OutperformerCertificate(StructuredProductBase):
             self.__foreign_rate,
         )
 
-        return {
-            "option_call1": option_call1,
-            "option_call2": option_call2
-        }
+        return {"option_call1": option_call1, "option_call2": option_call2}
 
     def compute_price(self) -> float:
         dico = self.decomposition(atm=True)
 
         self._price = (
             dico["option_call1"].compute_price()
-            + (self.__participation-1) * dico["option_call2"].compute_price()
+            + (self.__participation - 1) * dico["option_call2"].compute_price()
         )
         return self._price
 
@@ -132,9 +135,13 @@ class OutperformerCertificate(StructuredProductBase):
         OC1 = dico["option_call1"]
         OC2 = dico["option_call2"]
         return {
-            "delta": OC1.compute_delta() + (self.__participation-1) *  OC2.compute_delta(),
-            "gamma": OC1.compute_gamma() + (self.__participation-1) * OC2.compute_gamma(),
-            "theta": OC1.compute_theta() + (self.__participation-1) * OC2.compute_theta(),
-            "rho": OC1.compute_rho() + (self.__participation-1) * OC2.compute_rho(),
-            "vega": OC1.compute_vega() + (self.__participation-1) * OC2.compute_vega(),
+            "delta": OC1.compute_delta()
+            + (self.__participation - 1) * OC2.compute_delta(),
+            "gamma": OC1.compute_gamma()
+            + (self.__participation - 1) * OC2.compute_gamma(),
+            "theta": OC1.compute_theta()
+            + (self.__participation - 1) * OC2.compute_theta(),
+            "rho": OC1.compute_rho() + (self.__participation - 1) * OC2.compute_rho(),
+            "vega": OC1.compute_vega()
+            + (self.__participation - 1) * OC2.compute_vega(),
         }

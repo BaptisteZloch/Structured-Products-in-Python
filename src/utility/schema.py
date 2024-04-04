@@ -140,18 +140,21 @@ class StructuredProduct(BaseModel):
     volatility_surface: Optional[Dict[str, Dict[str, float]]] = Field(
         default=None, description="The implied volatility"
     )
-    nominal: int
+    maturity: float = Field(..., description="Maturity in years")
+    strike_price: float = Field(..., description="Spot price of the underlying")
 
 
 class ReverseConvertibleBaseModel(StructuredProduct):
-    maturity: float = Field(..., description="Maturity in years")
-    strike_price: float = Field(..., description="Spot price of the underlying")
+    nominal: int
     converse_rate: float
 
 
 class OutperformerCertificateBaseModel(StructuredProduct):
-    maturity1: float = Field(..., description="Maturity in years")
-    maturity2: float = Field(..., description="Maturity in years")
-    strike_price1: float
-    strike_price2: float
-    n_call: int
+    foreign_rate: Optional[float] = Field(
+        default=None, description="Foreign nterest rates"
+    )
+    foreign_rate_curve: Optional[Dict[str, float]] = Field(
+        default=None,
+        description="Foreign interest rates curve dictionary maturity as keys and rates as values",
+    )
+    participation: float

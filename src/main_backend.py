@@ -1,8 +1,8 @@
 import os
 import sys
-from typing import Dict, Union
+from typing import Annotated, Dict, Union
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import Body, FastAPI, HTTPException, Depends
 from fastapi.responses import RedirectResponse
 from src.services.pricing_service import PricingService
 from src.utility.schema import (
@@ -50,38 +50,44 @@ app.add_middleware(
 )
 def structured_product_pricing(
     product_kind: ProductKindType,
-    product: Union[OutperformerCertificateBaseModel, ReverseConvertibleBaseModel],
+    product: Annotated[
+        Union[OutperformerCertificateBaseModel, ReverseConvertibleBaseModel],
+        Body(
+            openapi_examples={
+                "reverse_convertible": {
+                    "summary": "Reverse convertible",
+                    "description": "Normal example without neither vol surface nor rate curve",
+                    "value": {
+                        "spot_price": 100,
+                        "maturity": 1,
+                        "rate": 0.03,
+                        "nominal": 1000,
+                        "dividend": 0.0,
+                        "volatility": 0.20,
+                        "strike_price": 100,
+                        "converse_rate": 0.02,
+                    },
+                },
+                "outperformer": {
+                    "summary": "Outperformer Certificate",
+                    "description": "Normal example without neither vol surface nor rate curve",
+                    "value": {
+                        "spot_price": 100,
+                        "maturity": 1,
+                        "rate": 0.03,
+                        "dividend": 0.0,
+                        "volatility": 0.20,
+                        "strike_price": 100,
+                        "participation": 1.2,
+                        "foreign_rate": 0.02,
+                    },
+                },
+            },
+        ),
+    ],
     pricing_service: PricingService = Depends(PricingService),
 ) -> Dict[str, float]:
-    """Outperformer json body :
-    ```json
-    {
-
-            "maturity1": 1,
-            "maturity2": 2,
-            "spot_price":100,
-            "rate": 0.03,
-            "nominal":1000,
-            "dividend":0.0,
-            "volatility":0.20,
-            "n_call":3,
-            "strike_price1": 100,
-            "strike_price2": 120
-    }
-    ```
-    ```json
-    RC Json body :
-    {
-            "spot_price":100,
-            "maturity": 1,
-            "rate": 0.03,
-            "nominal":1000,
-            "dividend":0.0,
-            "volatility":0.20,
-            "strike_price": 100,
-            "converse_rate":0.02
-    }
-    ```
+    """API method to price structured products.
 
     Args:
         product_kind (ProductKindType): _description_
@@ -116,77 +122,85 @@ def structured_product_pricing(
 @app.post("/api/v1/price/option/{option_kind}", response_model=PricingResultBaseModel)
 def option_pricing(
     option_kind: OptionKindType,
-    product: Union[BarrierOptionBaseModel, BinaryOptionBaseModel, OptionBaseModel],
+    product: Annotated[
+        Union[BarrierOptionBaseModel, BinaryOptionBaseModel, OptionBaseModel],
+        Body(
+            openapi_examples={
+                "vanilla_binary_options": {
+                    "summary": "Vanilla or Binary option",
+                    "description": "Normal example without neither vol surface nor rate curve",
+                    "value": {
+                        "spot_price": 100,
+                        "strike_price": 100,
+                        "maturity": 1,
+                        "rate": 0.05,
+                        "volatility": 0.2,
+                        "option_type": "call",
+                    },
+                },
+                "vanilla_binary_options_rates": {
+                    "summary": "Vanilla or Binary option with Rate curve",
+                    "description": "Normal example without vol surface",
+                    "value": {
+                        "spot_price": 100,
+                        "strike_price": 100,
+                        "maturity": 1,
+                        "rate_curve": {"0.5": 0.02, "1": 0.06},
+                        "volatility": 0.2,
+                        "option_type": "call",
+                    },
+                },
+                "vanilla_binary_options_volsurface": {
+                    "summary": "Vanilla or Binary option with volatility surface",
+                    "description": "Normal example without rate curve",
+                    "value": {
+                        "spot_price": 100,
+                        "strike_price": 110,
+                        "maturity": 1,
+                        "rate": 0.03,
+                        "dividend": 0.0,
+                        "volatility_surface": {
+                            "1.0": {"0.9": 0.14, "1.0": 0.10, "1.1": 0.12},
+                            "1.5": {"0.9": 0.13, "1.0": 0.09, "1.1": 0.13},
+                            "2.0": {"0.9": 0.10, "1.0": 0.1, "1.1": 0.08},
+                        },
+                        "option_type": "call",
+                    },
+                },
+                "barrier_option": {
+                    "summary": "Barrier options",
+                    "description": "Normal example without neither rate curve or volatility surface however it can be used the same way.",
+                    "value": {
+                        "spot_price": 80,
+                        "strike_price": 100,
+                        "maturity": 0.5,
+                        "rate": 0.03,
+                        "dividend": 0.0,
+                        "volatility": 0.20,
+                        "option_type": "put",
+                        "barrier_level": 80,
+                        "barrier_type": "ki",
+                        "barrier_direction": "down",
+                    },
+                },
+            },
+        ),
+    ],
     pricing_service: PricingService = Depends(PricingService),
 ) -> Dict[str, float]:
     """Send json like:
-        ```json
-        {
-            "spot_price":100,
-            "strike_price": 100,
-            "maturity": 1,
-            "rate": 0.05,
-            "volatility": 0.2,
-            "option_type": "call"
-        }
-        {
-            "spot_price":100,
-            "strike_price": 100,
-            "maturity": 1,
-            "rate_curve": {"0.5":0.02,"1":0.06},
-            "volatility": 0.2,
-            "option_type": "call"
-        }
-        {
-        "spot_price":100,
-        "strike_price": 110,
-        "maturity": 1,
-        "rate": 0.03,
-        "dividend":0.0,
-        "volatility_surface":{
-        "1.0": {
-            "0.9": 0.14,
-            "1.0": 0.10,
-            "1.1": 0.12
-        },
-        "1.5": {
-            "0.9": 0.13,
-            "1.0": 0.09,
-            "1.1": 0.13
-        },
-        "2.0": {
-            "0.9": 0.10,
-            "1.0": 0.1,
-            "1.1": 0.08
-        }},
-        "option_type": "call"
-        }
-        {
-            "spot_price":80,
-            "strike_price": 100,
-            "maturity": 0.5,
-            "rate": 0.03,
-            "dividend":0.0,
-            "volatility": 0.20,
-            "option_type": "put",
-            "barrier_level":80,
-            "barrier_type":"ki",
-            "barrier_direction":"down"
 
-    }
-        ```
+    Args:
+        option_kind (OptionKindType): _description_
+        product (Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel]): _description_
+        pricing_service (PricingService, optional): _description_. Defaults to Depends(PricingService).
 
-        Args:
-            option_kind (OptionKindType): _description_
-            product (Union[BinaryOptionBaseModel, OptionBaseModel, BarrierOptionBaseModel]): _description_
-            pricing_service (PricingService, optional): _description_. Defaults to Depends(PricingService).
+    Raises:
+        ValueError: _description_
+        HTTPException: _description_
 
-        Raises:
-            ValueError: _description_
-            HTTPException: _description_
-
-        Returns:
-            Dict[str, float]: _description_
+    Returns:
+        Dict[str, float]: _description_
     """
     try:
         if option_kind == "binary" and isinstance(product, BinaryOptionBaseModel):
@@ -271,26 +285,33 @@ def option_strategy_pricing(
 @app.post("/api/v1/price/bond/{bond_type}")
 def bond_pricing(
     bond_type: BondType,
-    product: Union[BondBaseModel, ZeroCouponBondBaseModel],
+    product: Annotated[
+        Union[BondBaseModel, ZeroCouponBondBaseModel],
+        Body(
+            openapi_examples={
+                "zero_coupon": {
+                    "summary": "Zero coupon",
+                    "description": "Normal example for Zero Coupon Bond",
+                    "value": {"rate": 0.05, "maturity": 1, "nominal": 1000},
+                },
+                "bond": {
+                    "summary": "Vanilla Bond",
+                    "description": "Normal example for Bond",
+                    "value": {
+                        "rate": 0.05,
+                        "maturity": 1,
+                        "nominal": 1000,
+                        "coupon_rate": 0.2,
+                        "nb_coupon": 2,
+                    },
+                },
+            },
+        ),
+    ],
     pricing_service: PricingService = Depends(PricingService),
 ):
     """Send json like:
-    ```json
-    {
-        "rate":0.05,
-        "maturity":1,
-        "nominal":1000,
-        "coupon_rate":0.2,
-        "nb_coupon":2
-    }
-    ``` or
-    ```json
-    {
-        "rate":0.05,
-        "maturity":1,
-        "nominal":1000
-    }
-    ```
+
 
     Args:
         product (BondBaseModel): _description_

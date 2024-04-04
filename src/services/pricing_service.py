@@ -91,13 +91,12 @@ class PricingService:
         product_dict = PricingService.__handle_rate_and_rate_curve_base_model(
             product_dict
         )
-        product_dict["maturity1"] = Maturity(maturity_in_years=product_dict["maturity1"])
-        product_dict["maturity2"] = Maturity(maturity_in_years=product_dict["maturity2"])
+        product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
 
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
-        
+
         opt = OutperformerCertificate(**product_dict)
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
