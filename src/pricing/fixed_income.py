@@ -85,30 +85,6 @@ class ZeroCouponBond(ABCBond):
                 )
             )  # =~100 - TAUX x Maturité
         return self._price
-    
-    def compute_rho(self, eps: Optional[float] = 0.01):
-        top_rate = Rate(
-            self.__rate.__rate * (1+eps),
-            self.__rate.__rate_type,
-            self.__rate.__interpolation_type
-            )
-        bot_rate = Rate(
-            self.__rate.__rate * (1-eps),
-            self.__rate.__rate_type,
-            self.__rate.__interpolation_type
-            )
-        top_bond = ZeroCouponBond(
-            top_rate,
-            self.__maturity,
-            self.__nominal)
-        bot_bond = ZeroCouponBond(
-            bot_rate,
-            self.__maturity,
-            self.__nominal)
-        tp = top_bond.compute_price()
-        bp = bot_bond.compute_price()
-        
-        return (tp-bp)/(2*eps)
 
 class Bond(ABCBond):
     _price: Optional[float] = None
