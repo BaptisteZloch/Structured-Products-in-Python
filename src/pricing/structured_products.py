@@ -60,7 +60,7 @@ class ReverseConvertible(StructuredProductBase):
             "delta": -(1 - self.__converse_rate) * option.compute_delta(),
             "gamma": -(1 - self.__converse_rate) * option.compute_gamma(),
             "theta": -(1 - self.__converse_rate) * option.compute_theta(),
-            "rho": (1 - self.__converse_rate) * option.compute_rho(),
+            "rho": -(1 - self.__converse_rate) * option.compute_rho(),
             "vega": -(1 - self.__converse_rate) * option.compute_vega(),
         }
 
