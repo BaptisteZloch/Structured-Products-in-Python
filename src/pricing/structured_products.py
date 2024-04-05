@@ -17,7 +17,7 @@ class ReverseConvertible(StructuredProductBase):
         spot_price: float,
         strike_price: float,
         volatility: Volatility,
-        converse_rate: float,
+        converse_rate: Optional[float] = 0.0,
         dividend: Optional[float] = None,
     ) -> None:
         super().__init__("reverse-convertible")
