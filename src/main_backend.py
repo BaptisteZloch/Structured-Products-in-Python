@@ -66,7 +66,7 @@ app.add_middleware(
 def structured_product_pricing(
     product_kind: ProductKindType,
     product: Annotated[
-        Union[OutperformerCertificateBaseModel, ReverseConvertibleBaseModel],
+        Union[ReverseConvertibleBaseModel, OutperformerCertificateBaseModel],
         Body(
             openapi_examples={
                 "reverse_convertible": {
