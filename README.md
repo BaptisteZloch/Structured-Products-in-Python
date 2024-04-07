@@ -17,3 +17,11 @@ python -m venv .venv
 ```
 All the code is in the `src` folder.
 The project guidelines are in the `static` folder.
+
+# Access API
+The API is available here :
+https://structured-pricing-api-dauphine.koyeb.app/docs
+
+# Access App
+The App is available here (it is directly connected to the API) :
+https://sp-app-in-python.streamlit.app/

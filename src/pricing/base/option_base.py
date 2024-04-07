@@ -114,6 +114,26 @@ class OptionBase(ABC):
     def compute_greeks(self):
         pass
 
+    @abstractmethod
+    def compute_vega(self):
+        pass
+
+    @abstractmethod
+    def compute_delta(self):
+        pass
+
+    @abstractmethod
+    def compute_rho(self):
+        pass
+
+    @abstractmethod
+    def compute_theta(self):
+        pass
+
+    @abstractmethod
+    def compute_gamma(self):
+        pass
+
     def __str__(self) -> str:
         """
         Provides a human-readable string representation of the OptionBase object.
