@@ -478,7 +478,7 @@ def option_strategy_pricing(
                 StripStrategyBaseModel(**product.model_dump(exclude_unset=True))
             )
         if option_strategy == "strap":
-            return pricing_service.process_strip_strategy(
+            return pricing_service.process_strap_strategy(
                 StrapStrategyBaseModel(**product.model_dump(exclude_unset=True))
             )
         raise ValueError("Provide valid input.")
