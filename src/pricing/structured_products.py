@@ -91,32 +91,31 @@ class OutperformerCertificate(StructuredProductBase):
         self.__participation = participation
         self.__dividend = dividend
         self.__foreign_rate = foreign_rate
-        print(self.__strike_price)
 
     def decomposition(
         self, atm: Optional[bool] = False
     ) -> Dict[str, Union[OptionBase, ZeroCouponBond]]:
         option_call1 = VanillaOption(
-            self.__spot_price,
-            10 ** (-9),
-            self.__maturity,
-            self.__rate,
-            self.__volatility,
-            "call",
-            self.__dividend,
-            self.__foreign_rate,
+            spot_price=self.__spot_price,
+            strike_price=10 ** (-9),
+            maturity=self.__maturity,
+            rate=self.__rate,
+            volatility=self.__volatility,
+            option_type="call",
+            dividend=self.__dividend,
+            foreign_rate=self.__foreign_rate,
         )
 
         spot = (1 - atm) * self.__spot_price + atm * self.__strike_price
         option_call2 = VanillaOption(
-            spot,
-            self.__strike_price,
-            self.__maturity,
-            self.__rate,
-            self.__volatility,
-            "call",
-            self.__dividend,
-            self.__foreign_rate,
+            spot_price=spot,
+            strike_price=self.__strike_price,
+            maturity=self.__maturity,
+            rate=self.__rate,
+            volatility=self.__volatility,
+            option_type="call",
+            dividend=self.__dividend,
+            foreign_rate=self.__foreign_rate,
         )
 
         return {"option_call1": option_call1, "option_call2": option_call2}
