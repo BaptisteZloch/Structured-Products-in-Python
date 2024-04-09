@@ -86,7 +86,6 @@ class ZeroCouponBond(ABCBond):
             )  # =~100 - TAUX x Maturité
         return self._price
 
-
 class Bond(ABCBond):
     _price: Optional[float] = None
     _ytm: Optional[float] = None

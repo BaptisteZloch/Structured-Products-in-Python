@@ -14,12 +14,14 @@ class OptionStrategy(ABC):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         self._spot_price = spot_price
         self._maturity = maturity
         self._rate = rate
         self._volatility = volatility
         self._dividend = dividend if dividend is not None else 0.0
+        self._foreign_rate = foreign_rate
 
     @abstractmethod
     def compute_greeks(self):
@@ -35,8 +37,9 @@ class StraddleStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         self._strike_price = strike_price
 
     def compute_price(self) -> float:
@@ -49,6 +52,7 @@ class StraddleStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             + VanillaOption(
                 self._spot_price,
@@ -58,18 +62,39 @@ class StraddleStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
-
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+        call_option = VanillaOption(
+            self._spot_price,
+            self._strike_price,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
+        put_option = VanillaOption(
+            self._spot_price,
+            self._strike_price,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
 
+        call_greeks = call_option.compute_greeks()
+        put_greeks = put_option.compute_greeks()
+
+        combined_greeks = {
+            greek: call_greeks[greek] + put_greeks[greek] for greek in call_greeks
+        }
+        
+        return combined_greeks
 
 class StrangleStrategy(OptionStrategy):
     def __init__(
@@ -81,6 +106,7 @@ class StrangleStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
         """_summary_
 
@@ -92,7 +118,7 @@ class StrangleStrategy(OptionStrategy):
             rate (Rate): _description_
             volatility (Volatility): _description_
         """
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -109,6 +135,7 @@ class StrangleStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             + VanillaOption(
                 self._spot_price,
@@ -118,17 +145,40 @@ class StrangleStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
+        lower_strike_call = VanillaOption(
+            self._spot_price,
+            self._strike_price1,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
+        higher_strike_put = VanillaOption(
+            self._spot_price,
+            self._strike_price2,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
+
+        call_greeks = lower_strike_call.compute_greeks()
+        put_greeks = higher_strike_put.compute_greeks()
+
+        combined_greeks = {
+            greek: call_greeks[greek] + put_greeks[greek] for greek in call_greeks
         }
+        
+        return combined_greeks
 
 
 class ButterflyStrategy(OptionStrategy):
@@ -142,8 +192,9 @@ class ButterflyStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2 < strike_price3
         ), "Error provide strike_price1 < strike_price2 < strike_price3."
@@ -161,6 +212,7 @@ class ButterflyStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             - 2
             * VanillaOption(
@@ -180,17 +232,51 @@ class ButterflyStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+            long_call_low = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            short_call_mid = VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            long_call_high = VanillaOption(
+                self._spot_price,
+                self._strike_price3,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+
+            low_greeks = long_call_low.compute_greeks()
+            mid_greeks = short_call_mid.compute_greeks()
+            high_greeks = long_call_high.compute_greeks()
+
+            combined_greeks = {
+                greek: low_greeks[greek] - 2 * mid_greeks[greek] + high_greeks[greek] for greek in low_greeks
+            }
+            
+            return combined_greeks
 
 
 class CallSpreadStrategy(OptionStrategy):
@@ -203,8 +289,9 @@ class CallSpreadStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             lower_strike < upper_strike
         ), "Error: lower strike must be less than upper strike."
@@ -219,8 +306,9 @@ class CallSpreadStrategy(OptionStrategy):
                 self._maturity,
                 self._rate,
                 self._volatility,
-                "call",
-                self._dividend,
+                option_type="call",
+                dividend=self._dividend,
+                foreign_rate=self._foreign_rate,
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
@@ -230,18 +318,40 @@ class CallSpreadStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+        long_call = VanillaOption(
+            self._spot_price,
+            self._lower_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
+        short_call = VanillaOption(
+            self._spot_price,
+            self._upper_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "call",
+            self._dividend,
+            self._foreign_rate,
+        )
 
+        long_call_greeks = long_call.compute_greeks()
+        short_call_greeks = short_call.compute_greeks()
+
+        combined_greeks = {
+            greek: long_call_greeks[greek] - short_call_greeks[greek] for greek in long_call_greeks
+        }
+        
+        return combined_greeks
 
 class PutSpreadStrategy(OptionStrategy):
     def __init__(
@@ -253,8 +363,9 @@ class PutSpreadStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             lower_strike < upper_strike
         ), "Error: lower strike must be less than upper strike."
@@ -271,6 +382,7 @@ class PutSpreadStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             - VanillaOption(
                 self._spot_price,
@@ -280,17 +392,40 @@ class PutSpreadStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
-
+        
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
+        long_put = VanillaOption(
+            self._spot_price,
+            self._upper_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
+        short_put = VanillaOption(
+            self._spot_price,
+            self._lower_strike,
+            self._maturity,
+            self._rate,
+            self._volatility,
+            "put",
+            self._dividend,
+            self._foreign_rate,
+        )
+
+        long_put_greeks = long_put.compute_greeks()
+        short_put_greeks = short_put.compute_greeks()
+
+        combined_greeks = {
+            greek: long_put_greeks[greek] - short_put_greeks[greek] for greek in long_put_greeks
         }
+        
+        return combined_greeks
 
 
 class StripStrategy(OptionStrategy):
@@ -303,8 +438,9 @@ class StripStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -317,12 +453,38 @@ class StripStrategy(OptionStrategy):
             * VanillaOption(
                 self._spot_price,
                 self._strike_price2,
+                maturity=self._maturity,
+                rate=self._rate,
+                dividend=self._dividend,
+                volatility=self._volatility,
+                foreign_rate=self._foreign_rate,
+                option_type="put",
+            ).compute_price()
+            - VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                rate=self._rate,
+                volatility=self._volatility,
+                option_type="put",
+                dividend=self._dividend,
+                foreign_rate=self._foreign_rate,
+            ).compute_price()
+        )
+
+    def compute_greeks(self):
+    
+            call_option = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
                 self._maturity,
                 self._rate,
                 self._volatility,
-                "put",
-            ).compute_price()
-            - VanillaOption(
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            put_option1 = VanillaOption(
                 self._spot_price,
                 self._strike_price1,
                 self._maturity,
@@ -330,18 +492,28 @@ class StripStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
-            ).compute_price()
-        )
+                self._foreign_rate,
+            )
+            put_option2 = VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+                self._dividend,
+                self._foreign_rate,
+            )
 
-    def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+            call_greeks = call_option.compute_greeks()
+            put_greeks1 = put_option1.compute_greeks()
+            put_greeks2 = put_option2.compute_greeks()
 
+            combined_greeks = {
+                greek: call_greeks[greek] + put_greeks1[greek] + put_greeks2[greek] for greek in call_greeks
+            }
+            
+            return combined_greeks
 
 class StrapStrategy(OptionStrategy):
     def __init__(
@@ -353,8 +525,9 @@ class StrapStrategy(OptionStrategy):
         rate: Rate,
         volatility: Volatility,
         dividend: Optional[float] = None,
+        foreign_rate: Optional[Rate] = None,
     ) -> None:
-        super().__init__(spot_price, maturity, rate, volatility, dividend)
+        super().__init__(spot_price, maturity, rate, volatility, dividend, foreign_rate)
         assert (
             strike_price1 < strike_price2
         ), "Error provide strike_price1 < strike_price2."
@@ -371,6 +544,7 @@ class StrapStrategy(OptionStrategy):
                 self._volatility,
                 "call",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
             - 2
             * VanillaOption(
@@ -381,14 +555,48 @@ class StrapStrategy(OptionStrategy):
                 self._volatility,
                 "put",
                 self._dividend,
+                self._foreign_rate,
             ).compute_price()
         )
 
     def compute_greeks(self):
-        return {
-            "delta": 0.0,
-            "gamma": 0.0,
-            "theta": 0.0,
-            "rho": 0.0,
-            "vega": 0.0,
-        }
+            call_option1 = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            call_option2 = VanillaOption(
+                self._spot_price,
+                self._strike_price2,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "call",
+                self._dividend,
+                self._foreign_rate,
+            )
+            put_option = VanillaOption(
+                self._spot_price,
+                self._strike_price1,
+                self._maturity,
+                self._rate,
+                self._volatility,
+                "put",
+                self._dividend,
+                self._foreign_rate,
+            )
+
+            call_greeks1 = call_option1.compute_greeks()
+            call_greeks2 = call_option2.compute_greeks()
+            put_greeks = put_option.compute_greeks()
+
+            combined_greeks = {
+                greek: call_greeks1[greek] + call_greeks2[greek] + put_greeks[greek] for greek in call_greeks1
+            }
+            
+            return combined_greeks

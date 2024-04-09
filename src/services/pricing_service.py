@@ -1,3 +1,4 @@
+from itertools import product
 from typing import Any, Dict
 from pydantic import BaseModel
 
@@ -23,6 +24,7 @@ from src.utility.schema import (
     ButterflyStrategyBaseModel,
     CallSpreadStrategyBaseModel,
     OptionBaseModel,
+    OptionStrategyBaseModel,
     OutperformerCertificateBaseModel,
     PutSpreadStrategyBaseModel,
     ReverseConvertibleBaseModel,
@@ -36,6 +38,21 @@ from src.utility.types import Maturity
 
 
 class PricingService:
+    """
+    Provides methods for mapping and pricing various financial products, including:
+
+    - Outperformer certificates
+    - Reverse convertibles
+    - Binary options
+    - Vanilla options
+    - Barrier options
+    - Bonds
+    - Zero-coupon bonds
+    - Option strategies (straddle, strangle, butterfly, call spread, put spread, strip, strap)
+
+    Handles input validation and model object creation, ensuring consistency in pricing calculations.
+    """
+
     @staticmethod
     def __handle_rate_and_rate_curve_base_model(base_model_dict: Dict[str, Any]):
         if "rate" in base_model_dict.keys():
@@ -53,20 +70,51 @@ class PricingService:
         return base_model_dict
 
     @staticmethod
+    def __handle_foreign_rate_and_foreign_rate_curve_base_model(
+        base_model_dict: Dict[str, Any]
+    ):
+        if "foreign_rate" in base_model_dict.keys():
+            base_model_dict["foreign_rate"] = Rate(rate=base_model_dict["foreign_rate"])
+        elif "foreign_rate_curve" in base_model_dict.keys():
+            base_model_dict["foreign_rate_curve"] = Rate(
+                rate_curve={
+                    Maturity(float(maturity_string)): rates
+                    for maturity_string, rates in base_model_dict[
+                        "foreign_rate_curve"
+                    ].items()
+                }
+            )
+            base_model_dict["foreign_rate"] = base_model_dict.pop("foreign_rate_curve")
+        else:
+            raise ValueError(
+                "Error, provide either rate or foreign_rate_curve argument"
+            )
+        return base_model_dict
+
+    @staticmethod
     def __handle_vol_and_vol_surface_base_model(base_model_dict: Dict[str, Any]):
         if "volatility" in base_model_dict.keys():
             base_model_dict["volatility"] = Volatility(
                 volatility=base_model_dict["volatility"]
             )
         elif "volatility_surface" in base_model_dict.keys():
-            raise NotImplementedError()
-            # base_model_dict["rate_curve"] = Rate(
-            #     rate_curve={
-            #         Maturity(float(maturity_string)): rates
-            #         for maturity_string, rates in base_model_dict["rate_curve"].items()
-            #     }
-            # )
-            # base_model_dict["rate"] = base_model_dict.pop("rate_curve")
+            volatility_surface = {}
+            for comb in product(
+                map(float, base_model_dict["volatility_surface"].keys()),
+                map(
+                    float,
+                    list(base_model_dict["volatility_surface"].items())[0][-1].keys(),
+                ),
+            ):  # type: ignore
+                volatility_surface[comb] = (
+                    base_model_dict["volatility_surface"]
+                    .get(str(comb[0]))
+                    .get(str(comb[-1]), int(comb[-1]))
+                )
+            base_model_dict["volatility_surface"] = Volatility(
+                volatility_surface=volatility_surface
+            )
+            base_model_dict["volatility"] = base_model_dict.pop("volatility_surface")
         else:
             raise ValueError(
                 "Error, provide either volatility or volatility_surface argument"
@@ -78,6 +126,18 @@ class PricingService:
         request_received_model: OutperformerCertificateBaseModel,
     ) -> Dict[str, float]:
         product_dict = request_received_model.model_dump(exclude_unset=True)
+
+        product_dict = (
+            PricingService.__handle_foreign_rate_and_foreign_rate_curve_base_model(
+                PricingService.__handle_rate_and_rate_curve_base_model(product_dict)
+            )
+        )
+        product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
+
+        product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
+            product_dict
+        )
+
         opt = OutperformerCertificate(**product_dict)
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
@@ -86,6 +146,14 @@ class PricingService:
         request_received_model: ReverseConvertibleBaseModel,
     ) -> Dict[str, float]:
         product_dict = request_received_model.model_dump(exclude_unset=True)
+        product_dict = PricingService.__handle_rate_and_rate_curve_base_model(
+            product_dict
+        )
+        product_dict["maturity"] = Maturity(maturity_in_years=product_dict["maturity"])
+
+        product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
+            product_dict
+        )
         opt = ReverseConvertible(**product_dict)
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
@@ -312,6 +380,7 @@ class PricingService:
         product_dict = PricingService.__handle_vol_and_vol_surface_base_model(
             product_dict
         )
+
         opt = StripStrategy(
             spot_price=product_dict["spot_price"],
             strike_price1=product_dict["strike_price1"],
@@ -321,7 +390,6 @@ class PricingService:
             volatility=product_dict["volatility"],
             dividend=product_dict["dividend"],
         )
-
         return dict({"price": opt.compute_price()}, **opt.compute_greeks())
 
     @staticmethod
