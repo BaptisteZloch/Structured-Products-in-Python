@@ -45,18 +45,19 @@ st.markdown(
 )
 
 
-def collect_volatility_data(strike_price):
-    strikes = np.array([0.8, 0.9, 1, 1.1, 1.2]) * strike_price
-    volatility_matrix = pd.DataFrame(index=strikes, columns=["6M", "1Y", "2Y", "5Y", "10Y"], data=0.0)
+def collect_volatility_data():
+    s = [0.8, 0.9, 1, 1.1, 1.2]
+    volatility_matrix = pd.DataFrame(index=s, columns=["3M", "6M", "1Y", "1.5Y", "2Y"], data=0.0)
     st.write("Veuillez saisir les valeurs de volatilité pour chaque combinaison de maturité et de moneyness :")
     volatility_matrix = st.data_editor(volatility_matrix)
-    maturities = [0.5, 1, 2, 5, 10]
+    maturities = [0.25, 0.5, 1.0, 1.5, 2.0]
     volatility_surface = {}
-    for i, strike in enumerate(volatility_matrix.index):
-        for j, maturity in enumerate(volatility_matrix.columns):
-            key = (strikes[i], maturities[j])
+    for i, maturity in enumerate(volatility_matrix.columns):
+        key = str(maturities[i])
+        volatility_surface[key] = {}
+        for j, strike in enumerate(volatility_matrix.index):
             if not pd.isnull(volatility_matrix.loc[strike, maturity]):
-                volatility_surface[key] = volatility_matrix.loc[strike, maturity]
+                volatility_surface[key][str(s[j])] = float(volatility_matrix.loc[strike, maturity])
     if st.button("Enregistrer la Surface de Volatilité"):
         st.success("Données de volatilité enregistrées avec succès !")
     return volatility_surface
@@ -73,7 +74,7 @@ def collect_rate_data():
     rate_curve = {}
     for i, maturity in enumerate(rate_matrix.columns):
         if not pd.isnull(rate_matrix.at[0, maturity]):
-            rate_curve[maturities[i]] = rate_matrix.at[0, maturity]
+            rate_curve[maturities[i].maturity_in_years] = rate_matrix.at[0, maturity]
     if st.button("Enregistrer la Courbe des Taux"):
         st.success("Données de taux enregistrées avec succès !")
     return rate_curve
@@ -115,28 +116,40 @@ def show_option_pricing():
     today = datetime.today()
     maturity = Maturity(start_date=today, end_date=maturity_datetime).maturity_in_years
 
-    rate_choice = st.selectbox("Rate Input", ["Single Value", "Rate Curve"])
+    if option_type != "Barrier Option":
+        rate_choice = st.selectbox("Rate Input", ["Single Value", "Rate Curve"])
+    else:
+        rate_choice = "Single Value"
+
     if rate_choice == "Single Value":
         rate = st.number_input("Interest Rate", value=0.05)
         rate = Rate(rate).get_rate()
+        rate_curve = 0
     else:
         rate_curve = collect_rate_data()
-        rate = Rate(rate_curve=rate_curve).get_rate(maturity=Maturity(start_date=today, end_date=maturity_datetime))
+        rate = 0
 
-    volatility_choice = st.selectbox("Volatility Input", ["Single Value", "Volatility Surface"])
+    if option_type != "Barrier Option":
+        volatility_choice = st.selectbox("Volatility Input", ["Single Value", "Volatility Surface"])
+    else:
+        volatility_choice = "Single Value"
+
     if volatility_choice == "Single Value":
         volatility = st.number_input("Volatility", value=0.20)
         volatility = Volatility(volatility).get_volatility()
+        volatility_surface = 0
     else:
-        volatility_surface = collect_volatility_data(strike)
-        volatility = Volatility(volatility_surface=volatility_surface).get_volatility(strike, maturity)
+        volatility_surface = collect_volatility_data()
+        volatility = 0
 
     if option_type == "Barrier Option":
         barrier_level = st.number_input("Barrier Level", value=100.0)
-        barrier_type = st.selectbox("Barrier Type", ["KO", "KI"])
+        barrier_type = st.selectbox("Barrier Type", ["ko", "ki"])
+        barrier_direction = st.selectbox("Barrier Direction", ["up", "down"])
     else:
         barrier_level = 0
         barrier_type = 0
+        barrier_direction = 0
 
     opt_type = st.selectbox("Option Type", ["call", "put"])
 
@@ -153,14 +166,13 @@ def show_option_pricing():
                     "strike_price": strike,
                     "maturity": maturity,
                     "dividend": dividend,
-                    "rate": rate,
-                    "volatility": volatility,
                     "option_type": opt_type,
-                    **({"barrier_level": barrier_level, "barrier_type": barrier_type} if option_type == "Barrier Option" else {})
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
+                    **({"volatility": volatility} if volatility_choice == "Single Value" else {"volatility_surface": volatility_surface}),
+                    **({"barrier_level": barrier_level, "barrier_type": barrier_type, "barrier_direction": barrier_direction} if option_type == "Barrier Option" else {})
                 }
 
                 res = post(url=f"{URL}/api/v1/price/option/{dict_option[option_type]}", data=json.dumps(data)).json()
-
                 option_price = res["price"]
                 st.success(f"Option Price: {option_price:.2f} EUR")
 
@@ -175,10 +187,12 @@ def show_option_pricing():
                     "strike_price": strike,
                     "maturity": maturity,
                     "dividend": dividend,
-                    "rate": rate,
-                    "volatility": volatility,
                     "option_type": opt_type,
-                    ** ({"barrier_level": barrier_level, "barrier_type": barrier_type} if option_type == "Barrier Option" else {})
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
+                    **({"volatility": volatility} if volatility_choice == "Single Value" else {
+                        "volatility_surface": volatility_surface}),
+                    **({"barrier_level": barrier_level, "barrier_type": barrier_type,
+                        "barrier_direction": barrier_direction} if option_type == "Barrier Option" else {})
                 }
 
                 res = post(url=f"{URL}/api/v1/price/option/{dict_option[option_type]}", data=json.dumps(data)).json()
@@ -206,9 +220,10 @@ def show_fixed_income_pricing():
     if rate_choice == "Single Value":
         rate = st.number_input("Interest Rate", value=0.05)
         rate = Rate(rate).get_rate()
+        rate_curve = 0
     else:
         rate_curve = collect_rate_data()
-        rate = Rate(rate_curve=rate_curve).get_rate(maturity=Maturity(start_date=today, end_date=maturity_datetime))
+        rate = 0
 
     if option_type == "Bond":
         coupon_rate = st.number_input("Coupon Rate", value=0.05)
@@ -227,8 +242,8 @@ def show_fixed_income_pricing():
 
                 data = {
                     "maturity": maturity,
-                    "rate": rate,
                     "nominal": nominal,
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
                     **({"coupon_rate": coupon_rate, "nb_coupon": nb_coupon} if option_type == "Bond" else {})
                 }
 
@@ -245,14 +260,14 @@ def show_fixed_income_pricing():
 
                 data = {
                     "maturity": maturity,
-                    "rate": rate,
                     "nominal": nominal,
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
                     **({"coupon_rate": coupon_rate, "nb_coupon": nb_coupon} if option_type == "Bond" else {})
                 }
 
                 res = post(url=f"{URL}/api/v1/price/bond/{dict_option[option_type]}", data=json.dumps(data)).json()
 
-            st.success(f"Greeks : {show_greeks(res)}")
+                st.success(f"Greeks : {show_greeks(res)}")
 
     with col3:
         if st.button("Proba d'exercice"):
@@ -277,12 +292,20 @@ def show_strat_product_pricing():
     if rate_choice == "Single Value":
         rate = st.number_input("Interest Rate", value=0.05)
         rate = Rate(rate).get_rate()
+        rate_curve = 0
     else:
         rate_curve = collect_rate_data()
-        rate = Rate(rate_curve=rate_curve).get_rate(maturity=Maturity(start_date=today, end_date=maturity_datetime))
+        rate = 0
 
-    volatility = st.number_input("Volatility", value=0.20)
-    volatility = Volatility(volatility).get_volatility()
+    volatility_choice = st.selectbox("Volatility Input", ["Single Value", "Volatility Surface"])
+
+    if volatility_choice == "Single Value":
+        volatility = st.number_input("Volatility", value=0.20)
+        volatility = Volatility(volatility).get_volatility()
+        volatility_surface = 0
+    else:
+        volatility_surface = collect_volatility_data()
+        volatility = 0
 
     strike, strike_price1, strike_price2, strike_price3, lower_strike, upper_strike = 0, 0, 0, 0, 0, 0
 
@@ -311,8 +334,9 @@ def show_strat_product_pricing():
                     "spot_price": spot_price,
                     "maturity": maturity,
                     "dividend": dividend,
-                    "rate": rate,
-                    "volatility": volatility,
+                    **({"volatility": volatility} if volatility_choice == "Single Value" else {
+                        "volatility_surface": volatility_surface}),
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
                     **({"strike_price": strike} if option_type == "Straddle Strategy" else
                        ({"lower_strike": lower_strike, "upper_strike": upper_strike} if option_type != "Butterfly" else
                        {"strike_price1": strike_price1, "strike_price2": strike_price2, "strike_price3": strike_price3})
@@ -337,17 +361,18 @@ def show_strat_product_pricing():
                     "spot_price": spot_price,
                     "maturity": maturity,
                     "dividend": dividend,
-                    "rate": rate,
-                    "volatility": volatility,
-                    **({"strike": strike} if option_type == "Straddle Strategy" else
-                       ({"lower_strike": lower_strike, "upper_strike": upper_strike} if option_type != "Butterfly" else
-                       {"strike_price1": strike_price1, "strike_price2": strike_price2, "strike_price3": strike_price3})
-                       )
+                    **({"volatility": volatility} if volatility_choice == "Single Value" else {
+                        "volatility_surface": volatility_surface}),
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
+                    **({"strike": strike} if option_type == "Straddle Strategy" else {}),
+                    **({"strike_price1": lower_strike, "strike_price2": upper_strike} if option_type in ["Strangle Strategy", "Strip", "Strap"] else {}),
+                    **({"lower_strike": lower_strike, "upper_strike": upper_strike} if option_type in ["Call Spread", "Put Spread"] else {}),
+                    **({"strike_price1": strike_price1, "strike_price2": strike_price2, "strike_price3": strike_price3} if option_type == "Butterfly" else {})
                 }
 
                 res = post(url=f"{URL}/api/v1/price/option-strategy/{dict_option[option_type]}", data=json.dumps(data)).json()
 
-            st.success(f"Greeks : {show_greeks(res)}")
+                st.success(f"Greeks : {show_greeks(res)}")
 
     with col3:
         if st.button("Proba d'exercice"):
@@ -361,10 +386,49 @@ def show_struct_product_pricing():
     option_type = st.selectbox("Select Option Type", ["Reverse Convertible", "Outperformer Certificate"])
 
     spot_price = st.number_input("Spot Price", value=100.0)
+    dividend = st.number_input("Dividend", value=0.05)
+    strike_price = st.number_input("Strike Price", value=100.0)
+
     maturity_date = st.date_input("Maturity", max_value=datetime.today() + timedelta(days=365 * 100), format="DD/MM/YYYY")
     maturity_datetime = datetime.combine(maturity_date, datetime.min.time())
     today = datetime.today()
     maturity = Maturity(start_date=today, end_date=maturity_datetime).maturity_in_years
+
+    if option_type == "Reverse Convertible":
+        nominal = st.number_input("Nominal", value=100)
+        converse_rate = st.number_input("Converse Rate", value=0.02)
+        foreign_rate, foreign_rate_curve, participation = 0, 0, 0
+    else:
+        foreign_rate_choice = st.selectbox("Foreign Rate Input", ["Single Value", "Rate Curve"])
+        if foreign_rate_choice == "Single Value":
+            foreign_rate = st.number_input("Foreign Interest Rate", value=0.05)
+            foreign_rate = Rate(foreign_rate).get_rate()
+            foreign_rate_curve = 0
+        else:
+            foreign_rate_curve = collect_rate_data()
+            foreign_rate = 0
+
+        participation = st.number_input("Participation", value=1.2)
+        nominal, converse_rate = 0, 0
+
+    rate_choice = st.selectbox("Rate Input", ["Single Value", "Rate Curve"])
+    if rate_choice == "Single Value":
+        rate = st.number_input("Interest Rate", value=0.05)
+        rate = Rate(rate).get_rate()
+        rate_curve = 0
+    else:
+        rate_curve = collect_rate_data()
+        rate = 0
+
+    volatility_choice = st.selectbox("Volatility Input", ["Single Value", "Volatility Surface"])
+
+    if volatility_choice == "Single Value":
+        volatility = st.number_input("Volatility", value=0.20)
+        volatility = Volatility(volatility).get_volatility()
+        volatility_surface = 0
+    else:
+        volatility_surface = collect_volatility_data()
+        volatility = 0
 
     col1, col2, col3 = st.columns(3)
 
@@ -373,18 +437,19 @@ def show_struct_product_pricing():
             with st.spinner("Calculating..."):
                 time.sleep(2)
 
-                dict_option = {"Reverse Convertible": "reverse-convertible",
-                               "Outperformer Certificate": "outperformer-certificate"}
+                dict_option = {"Reverse Convertible": "reverse-convertible", "Outperformer Certificate": "outperformer-certificate"}
 
-                res = post(url=f"{URL}/api/v1/price/structured-product/{dict_option[option_type]}",
-                           data=json.dumps(
-                               {
-                                   "maturity": maturity,
-                                   "spot_price": spot_price
-                               }
-                           )
-                           ).json()
+                data = {
+                    "spot_price": spot_price,
+                    "maturity": maturity,
+                    "dividend": dividend,
+                    "strike_price": strike_price,
+                    **({"volatility": volatility} if volatility_choice == "Single Value" else {"volatility_surface": volatility_surface}),
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
+                    **({"nominal": nominal, "converse_rate": converse_rate} if option_type == "Reverse Convertible" else {"participation": participation, **({"foreign_rate": foreign_rate} if foreign_rate_choice == "Single Value" else {"foreign_rate_curve": foreign_rate_curve})})
+                }
 
+                res = post(url=f"{URL}/api/v1/price/structured-product/{dict_option[option_type]}", data=json.dumps(data)).json()
                 option_price = res["price"]
                 st.success(f"Option Price: {option_price:.2f} EUR")
 
@@ -396,14 +461,23 @@ def show_struct_product_pricing():
                 dict_option = {"Reverse Convertible": "reverse-convertible",
                                "Outperformer Certificate": "outperformer-certificate"}
 
+                data = {
+                    "spot_price": spot_price,
+                    "maturity": maturity,
+                    "dividend": dividend,
+                    "strike_price": strike_price,
+                    **({"volatility": volatility} if volatility_choice == "Single Value" else {
+                        "volatility_surface": volatility_surface}),
+                    **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
+                    **({"nominal": nominal,
+                        "converse_rate": converse_rate} if option_type == "Reverse Convertible" else {
+                        "participation": participation, **(
+                            {"foreign_rate": foreign_rate} if foreign_rate_choice == "Single Value" else {
+                                "foreign_rate_curve": foreign_rate_curve})})
+                }
+
                 res = post(url=f"{URL}/api/v1/price/structured-product/{dict_option[option_type]}",
-                           data=json.dumps(
-                               {
-                                   "maturity": maturity,
-                                   "spot_price": spot_price
-                               }
-                           )
-                           ).json()
+                           data=json.dumps(data)).json()
 
                 st.success(f"Greeks : {show_greeks(res)}")
 
