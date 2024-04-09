@@ -47,10 +47,10 @@ st.markdown(
 
 def collect_volatility_data(strike_price):
     strikes = np.array([0.8, 0.9, 1, 1.1, 1.2]) * strike_price
-    volatility_matrix = pd.DataFrame(index=strikes, columns=["6M", "1Y", "2Y", "5Y", "10Y"], data=0.0)
+    volatility_matrix = pd.DataFrame(index=strikes, columns=["3M", "6M", "1Y", "1.5Y", "2Y"], data=0.0)
     st.write("Veuillez saisir les valeurs de volatilité pour chaque combinaison de maturité et de moneyness :")
     volatility_matrix = st.data_editor(volatility_matrix)
-    maturities = [0.5, 1, 2, 5, 10]
+    maturities = [0.25, 0.5, 1, 1.5, 2]
     volatility_surface = {}
     for i, strike in enumerate(volatility_matrix.index):
         for j, maturity in enumerate(volatility_matrix.columns):
