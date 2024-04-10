@@ -67,7 +67,7 @@ def collect_rate_data():
     rate_matrix = pd.DataFrame(index=range(1), columns=["1M", "2M", "3M", "6M", "9M", "1Y", "2Y", "3Y", "5Y", "7Y",
                                                         "10Y", "15Y", "20Y", "30Y"], data=0.0)
     st.write("Veuillez saisir les valeurs de taux pour chaque maturité, remplir 0 si donnée manquante :")
-    rate_matrix = st.data_editor(rate_matrix)
+    rate_matrix = st.data_editor(rate_matrix, key="rate")
     maturities = [Maturity(1 / 12), Maturity(2 / 12), Maturity(3 / 12), Maturity(6 / 12), Maturity(9 / 12), Maturity(1),
                   Maturity(2), Maturity(3), Maturity(5), Maturity(7), Maturity(10), Maturity(15), Maturity(20),
                   Maturity(30)]
@@ -78,6 +78,23 @@ def collect_rate_data():
     if st.button("Enregistrer la Courbe des Taux"):
         st.success("Données de taux enregistrées avec succès !")
     return rate_curve
+
+
+def collect_foreign_rate_data():
+    foreign_rate_matrix = pd.DataFrame(index=range(1), columns=["1M", "2M", "3M", "6M", "9M", "1Y", "2Y", "3Y", "5Y", "7Y",
+                                                        "10Y", "15Y", "20Y", "30Y"], data=0.0)
+    st.write("Veuillez saisir les valeurs de taux pour chaque maturité, remplir 0 si donnée manquante :")
+    foreign_rate_matrix = st.data_editor(foreign_rate_matrix, key="foreign rate")
+    maturities = [Maturity(1 / 12), Maturity(2 / 12), Maturity(3 / 12), Maturity(6 / 12), Maturity(9 / 12), Maturity(1),
+                  Maturity(2), Maturity(3), Maturity(5), Maturity(7), Maturity(10), Maturity(15), Maturity(20),
+                  Maturity(30)]
+    foreign_rate_curve = {}
+    for i, maturity in enumerate(foreign_rate_matrix.columns):
+        if not pd.isnull(foreign_rate_matrix.at[0, maturity]):
+            foreign_rate_curve[maturities[i].maturity_in_years] = foreign_rate_matrix.at[0, maturity]
+    if st.button("Enregistrer la Courbe des Foreign Rates"):
+        st.success("Données de taux enregistrées avec succès !")
+    return foreign_rate_curve
 
 
 def show_greeks(greeks):
@@ -337,10 +354,13 @@ def show_strat_product_pricing():
                     **({"volatility": volatility} if volatility_choice == "Single Value" else {
                         "volatility_surface": volatility_surface}),
                     **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
-                    **({"strike_price": strike} if option_type == "Straddle Strategy" else
-                       ({"lower_strike": lower_strike, "upper_strike": upper_strike} if option_type != "Butterfly" else
-                       {"strike_price1": strike_price1, "strike_price2": strike_price2, "strike_price3": strike_price3})
-                       )
+                    **({"strike": strike} if option_type == "Straddle Strategy" else {}),
+                    **({"strike_price1": lower_strike, "strike_price2": upper_strike} if option_type in [
+                        "Strangle Strategy", "Strip", "Strap"] else {}),
+                    **({"lower_strike": lower_strike, "upper_strike": upper_strike} if option_type in ["Call Spread",
+                                                                                                       "Put Spread"] else {}),
+                    **({"strike_price1": strike_price1, "strike_price2": strike_price2,
+                        "strike_price3": strike_price3} if option_type == "Butterfly" else {})
                 }
 
                 res = post(url=f"{URL}/api/v1/price/option-strategy/{dict_option[option_type]}", data=json.dumps(data)).json()
@@ -405,7 +425,7 @@ def show_struct_product_pricing():
             foreign_rate = Rate(foreign_rate).get_rate()
             foreign_rate_curve = 0
         else:
-            foreign_rate_curve = collect_rate_data()
+            foreign_rate_curve = collect_foreign_rate_data()
             foreign_rate = 0
 
         participation = st.number_input("Participation", value=1.2)
