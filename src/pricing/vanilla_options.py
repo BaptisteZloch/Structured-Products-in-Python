@@ -24,14 +24,15 @@ class VanillaOption(OptionBase):
         )
 
     def compute_price(self):
-        effective_rate = self._domestic_rate.get_rate(self._maturity) - (self._foreign_rate.get_rate(self._maturity) if self._foreign_rate else self._dividend)
-        
+        domestic_rate_value = self._domestic_rate.get_rate(self._maturity) 
+        dividend_rate = self._dividend if self._dividend is not None else 0.0
+
         if self._option_type == "call":
-            price = (self._spot_price * np.exp(-self._dividend * self._maturity.maturity_in_years) * norm.cdf(self._d1)
-                    - self._strike_price * np.exp(-effective_rate * self._maturity.maturity_in_years) * norm.cdf(self._d2))
+            price = (self._spot_price * np.exp(-dividend_rate * self._maturity.maturity_in_years) * norm.cdf(self._d1) -
+                     self._strike_price * np.exp(-domestic_rate_value * self._maturity.maturity_in_years) * norm.cdf(self._d2))
         elif self._option_type == "put":
-            price = (self._strike_price * np.exp(-effective_rate * self._maturity.maturity_in_years) * norm.cdf(-self._d2)
-                    - self._spot_price * np.exp(-self._dividend * self._maturity.maturity_in_years) * norm.cdf(-self._d1))
+            price = (self._strike_price * np.exp(-domestic_rate_value * self._maturity.maturity_in_years) * norm.cdf(-self._d2) -
+                     self._spot_price * np.exp(-dividend_rate * self._maturity.maturity_in_years) * norm.cdf(-self._d1))
         else:
             raise ValueError("Option type not supported. Use 'call' or 'put'.")
         return price

@@ -23,7 +23,7 @@ class BarrierOption(OptionBase):
         barrier_direction: BarrierDirection,
         dividend: Optional[float] = None,
         foreign_rate: Optional[Rate] = None,
-        # self._dividend = dividend if dividend is not None else 0.0
+
     ) -> None:
         super().__init__(
             spot_price, strike_price, maturity, rate, volatility, option_type, dividend, foreign_rate
