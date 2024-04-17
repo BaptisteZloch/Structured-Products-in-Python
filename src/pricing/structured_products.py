@@ -1,11 +1,12 @@
-from typing import Dict, Optional, Union
-from src.pricing.base.option_base import OptionBase
-from src.pricing.base.structured_products_base import StructuredProductBase
-from src.pricing.base.volatility import Volatility
-from src.pricing.fixed_income import ZeroCouponBond
-from src.pricing.vanilla_options import VanillaOption
+from typing import Dict, Optional
 from src.pricing.base.rate import Rate
-from src.utility.types import Maturity
+from src.pricing.base.volatility import Volatility
+from src.utility.types import Maturity, OptionType
+from src.pricing.base.structured_products_base import StructuredProductBase
+from src.pricing.vanilla_options import VanillaOption
+from src.pricing.fixed_income import ZeroCouponBond
+import math as m
+import numpy as np
 
 
 class ReverseConvertible(StructuredProductBase):
@@ -13,58 +14,57 @@ class ReverseConvertible(StructuredProductBase):
         self,
         rate: Rate,
         maturity: Maturity,
-        nominal: int,
         spot_price: float,
-        strike_price: float,
         volatility: Volatility,
-        converse_rate: Optional[float] = 0.0,
+        coupon: float,
         dividend: Optional[float] = None,
     ) -> None:
         super().__init__("reverse-convertible")
-        self.__rate = rate
-        self.__maturity = maturity
-        self.__nominal = nominal
-        self.__spot_price = spot_price
-        self.__strike_price = strike_price
-        self.__volatility = volatility
-        self.__converse_rate = converse_rate
-        self.__dividend = dividend
-
-    def decomposition(self) -> Dict[str, Union[OptionBase, ZeroCouponBond]]:
-        bond = ZeroCouponBond(self.__rate, self.__maturity, self.__nominal)
-        option = VanillaOption(
-            self.__spot_price,
-            self.__strike_price,
-            self.__maturity,
-            self.__rate,
-            self.__volatility,
-            "put",
-            self.__dividend,
-        )
-
-        return {"bond": bond, "option": option}
+        self.rate = rate
+        self.maturity = maturity
+        self.spot_price = spot_price
+        self.volatility = volatility
+        self.coupon = coupon
+        self.dividend = dividend if dividend is not None else 0.0
 
     def compute_price(self) -> float:
-        dico = self.decomposition()
-        option = dico["option"]
-        bond = dico["bond"]
-
-        self._price = (
-            bond.compute_price() - (1 - self.__converse_rate) * option.compute_price()
+        bond = ZeroCouponBond(self.rate, self.maturity, 100)
+        option = VanillaOption(
+            self.spot_price,
+            self.spot_price,
+            self.maturity,
+            self.rate,
+            self.volatility,
+            "put",
+            self.dividend,
         )
 
-        return self._price
+        discount_factor = np.exp(
+            -self.rate.get_rate(self.maturity) * self.maturity.maturity_in_years
+        )
+        discounted_coupon = (self.coupon * discount_factor) * 100
+
+        price = bond.compute_price() - option.compute_price() + discounted_coupon
+
+        return price
 
     def compute_greeks(self) -> Dict[str, float]:
-        dico = self.decomposition()
-        option = dico["option"]
-        bond = dico["bond"]
+        option = VanillaOption(
+            self.spot_price,
+            self.spot_price,
+            self.maturity,
+            self.rate,
+            self.volatility,
+            "put",
+            self.dividend,
+        )
+
         return {
-            "delta": -(1 - self.__converse_rate) * option.compute_delta(),
-            "gamma": -(1 - self.__converse_rate) * option.compute_gamma(),
-            "theta": -(1 - self.__converse_rate) * option.compute_theta(),
-            "rho": (1 - self.__converse_rate) * option.compute_rho(),
-            "vega": -(1 - self.__converse_rate) * option.compute_vega(),
+            "delta": option.compute_delta(),
+            "gamma": option.compute_gamma(),
+            "theta": option.compute_theta(),
+            "rho": option.compute_rho(),
+            "vega": option.compute_vega(),
         }
 
 
@@ -104,7 +104,16 @@ class OutperformerCertificate(StructuredProductBase):
             self.__dividend,
         )
 
-        return self.__spot_price + (1 - self.__participation) * atm_call.compute_price()
+        print(
+            m.exp(-self.__dividend * self.__maturity.maturity_in_years)
+            * self.__spot_price
+        )
+        print((self.__participation - 1) * atm_call.compute_price())
+        return (
+            m.exp(-self.__dividend * self.__maturity.maturity_in_years)
+            * self.__spot_price
+            + (self.__participation - 1) * atm_call.compute_price()
+        )
 
     def compute_greeks(self, eps: Optional[float] = 0.01) -> Dict[str, float]:
         atm_call = VanillaOption(
@@ -118,9 +127,9 @@ class OutperformerCertificate(StructuredProductBase):
         )
 
         return {
-            "delta": 1 + (1 - self.__participation) * atm_call.compute_delta(),
-            "gamma": (1 - self.__participation) * atm_call.compute_gamma(),
-            "theta": (1 - self.__participation) * atm_call.compute_theta(),
-            "rho": (1 - self.__participation) * atm_call.compute_rho(),
-            "vega": (1 - self.__participation) * atm_call.compute_vega(),
+            "delta": 1 + (self.__participation - 1) * atm_call.compute_delta(),
+            "gamma": (self.__participation - 1) * atm_call.compute_gamma(),
+            "theta": (self.__participation - 1) * atm_call.compute_theta(),
+            "rho": (self.__participation - 1) * atm_call.compute_rho(),
+            "vega": (self.__participation - 1) * atm_call.compute_vega(),
         }
