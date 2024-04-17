@@ -76,11 +76,9 @@ def structured_product_pricing(
                         "spot_price": 100,
                         "maturity": 1,
                         "rate": 0.03,
-                        "nominal": 1000,
+                        "coupon": 0.05,
                         "dividend": 0.0,
                         "volatility": 0.20,
-                        "strike_price": 100,
-                        "converse_rate": 0.02,
                     },
                 },
                 "reverse_convertible_vol_surf": {
@@ -90,33 +88,29 @@ def structured_product_pricing(
                         "spot_price": 100,
                         "maturity": 1,
                         "rate": 0.03,
-                        "nominal": 1000,
+                        "coupon": 0.05,
                         "dividend": 0.0,
                         "volatility_surface": {
                             "1.0": {"0.9": 0.14, "1.0": 0.10, "1.1": 0.12},
                             "1.5": {"0.9": 0.13, "1.0": 0.09, "1.1": 0.13},
                             "2.0": {"0.9": 0.10, "1.0": 0.1, "1.1": 0.08},
                         },
-                        "strike_price": 100,
-                        "converse_rate": 0.02,
                     },
                 },
-                "reverse_convertible_vol_surf": {
+                "reverse_convertible_vol_surf_rate_curve": {
                     "summary": "Reverse convertible with volatility surface and rate curve",
                     "description": "Reverse convertible example",
                     "value": {
                         "spot_price": 100,
                         "maturity": 1,
                         "rate_curve": {"0.5": 0.02, "1": 0.06},
-                        "nominal": 1000,
+                        "coupon": 0.05,
                         "dividend": 0.0,
                         "volatility_surface": {
                             "1.0": {"0.9": 0.14, "1.0": 0.10, "1.1": 0.12},
                             "1.5": {"0.9": 0.13, "1.0": 0.09, "1.1": 0.13},
                             "2.0": {"0.9": 0.10, "1.0": 0.1, "1.1": 0.08},
                         },
-                        "strike_price": 100,
-                        "converse_rate": 0.02,
                     },
                 },
                 "outperformer": {
@@ -128,7 +122,6 @@ def structured_product_pricing(
                         "rate": 0.03,
                         "dividend": 0.0,
                         "volatility": 0.20,
-                        "strike_price": 100,
                         "participation": 1.2,
                         "foreign_rate": 0.02,
                     },
@@ -158,17 +151,15 @@ def structured_product_pricing(
         Dict[str, float]: A dict representing with keys as price and greek names and values as computed values.
     """
     try:
-        if product_kind == "reverse-convertible" and isinstance(
-            product, ReverseConvertibleBaseModel
-        ):
+        if product_kind == "reverse-convertible":
             return pricing_service.process_reverse_convertible_structured_product(
-                product
+                ReverseConvertibleBaseModel(**product.model_dump(exclude_unset=True))
             )
-        if product_kind == "outperformer-certificate" and isinstance(
-            product, OutperformerCertificateBaseModel
-        ):
+        if product_kind == "outperformer-certificate":
             return pricing_service.process_outperformer_certificate_structured_product(
-                product
+                OutperformerCertificateBaseModel(
+                    **product.model_dump(exclude_unset=True)
+                )
             )
         raise ValueError("Provide valid input.")
     except Exception as e:

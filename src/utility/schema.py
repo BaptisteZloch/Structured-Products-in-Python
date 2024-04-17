@@ -169,17 +169,10 @@ class StructuredProduct(BaseModel):
         description="The implied volatility surface with first keys as maturity and second keys as moneyness.",
     )
     maturity: float = Field(default=1, description="Maturity in years", gt=0)
-    strike_price: float = Field(
-        default=100.0, description="Spot price of the underlying", gt=0
-    )
 
 
 class ReverseConvertibleBaseModel(StructuredProduct):
-    nominal: int = Field(
-        default=1000, description="Nominal value of the bond in currency", gt=0
-    )
-
-    converse_rate: float
+    coupon: float = Field(..., description="Coupon rate", ge=0)
 
 
 class OutperformerCertificateBaseModel(StructuredProduct):

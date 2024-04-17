@@ -104,11 +104,11 @@ class OutperformerCertificate(StructuredProductBase):
             self.__dividend,
         )
 
-        print(
-            m.exp(-self.__dividend * self.__maturity.maturity_in_years)
-            * self.__spot_price
-        )
-        print((self.__participation - 1) * atm_call.compute_price())
+        # print(
+        #     m.exp(-self.__dividend * self.__maturity.maturity_in_years)
+        #     * self.__spot_price
+        # )
+        # print((self.__participation - 1) * atm_call.compute_price())
         return (
             m.exp(-self.__dividend * self.__maturity.maturity_in_years)
             * self.__spot_price
