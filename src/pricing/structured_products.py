@@ -63,7 +63,7 @@ class ReverseConvertible(StructuredProductBase):
             "delta": -(1 - self.__converse_rate) * option.compute_delta(),
             "gamma": -(1 - self.__converse_rate) * option.compute_gamma(),
             "theta": -(1 - self.__converse_rate) * option.compute_theta(),
-            "rho": -(1 - self.__converse_rate) * option.compute_rho(),
+            "rho": (1 - self.__converse_rate) * option.compute_rho(),
             "vega": -(1 - self.__converse_rate) * option.compute_vega(),
         }
 
@@ -74,73 +74,53 @@ class OutperformerCertificate(StructuredProductBase):
         rate: Rate,
         maturity: Maturity,
         spot_price: float,
-        strike_price: float,
         volatility: Volatility,
         participation: float,
         dividend: Optional[float] = None,
         foreign_rate: Optional[Rate] = None,
     ) -> None:
         super().__init__("outperformer-certificate")
+        if participation <= 1.0:
+            raise ValueError(
+                "Participation must be greater than 100% (1.0 in decimal form)."
+            )
+
         self.__rate = rate
         self.__maturity = maturity
         self.__spot_price = spot_price
-        self.__strike_price = strike_price
         self.__volatility = volatility
-        if participation < 1:
-            raise ValueError("Participation must be higher than 100%")
         self.__participation = participation
         self.__dividend = dividend
         self.__foreign_rate = foreign_rate
 
-    def decomposition(
-        self, atm: Optional[bool] = False
-    ) -> Dict[str, Union[OptionBase, ZeroCouponBond]]:
-        option_call1 = VanillaOption(
-            spot_price=self.__spot_price,
-            strike_price=10 ** (-9),
-            maturity=self.__maturity,
-            rate=self.__rate,
-            volatility=self.__volatility,
-            option_type="call",
-            dividend=self.__dividend,
-            foreign_rate=self.__foreign_rate,
-        )
-
-        spot = (1 - atm) * self.__spot_price + atm * self.__strike_price
-        option_call2 = VanillaOption(
-            spot_price=spot,
-            strike_price=self.__strike_price,
-            maturity=self.__maturity,
-            rate=self.__rate,
-            volatility=self.__volatility,
-            option_type="call",
-            dividend=self.__dividend,
-            foreign_rate=self.__foreign_rate,
-        )
-
-        return {"option_call1": option_call1, "option_call2": option_call2}
-
     def compute_price(self) -> float:
-        dico = self.decomposition(atm=True)
-
-        self._price = (
-            dico["option_call1"].compute_price()
-            + (self.__participation - 1) * dico["option_call2"].compute_price()
+        atm_call = VanillaOption(
+            self.__spot_price,
+            self.__spot_price,
+            self.__maturity,
+            self.__rate,
+            self.__volatility,
+            "call",
+            self.__dividend,
         )
-        return self._price
 
-    def compute_greeks(self) -> Dict[str, float]:
-        dico = self.decomposition()
-        OC1 = dico["option_call1"]
-        OC2 = dico["option_call2"]
+        return self.__spot_price + (1 - self.__participation) * atm_call.compute_price()
+
+    def compute_greeks(self, eps: Optional[float] = 0.01) -> Dict[str, float]:
+        atm_call = VanillaOption(
+            self.__spot_price,
+            self.__spot_price,
+            self.__maturity,
+            self.__rate,
+            self.__volatility,
+            "call",
+            self.__dividend,
+        )
+
         return {
-            "delta": OC1.compute_delta()
-            + (self.__participation - 1) * OC2.compute_delta(),
-            "gamma": OC1.compute_gamma()
-            + (self.__participation - 1) * OC2.compute_gamma(),
-            "theta": OC1.compute_theta()
-            + (self.__participation - 1) * OC2.compute_theta(),
-            "rho": OC1.compute_rho() + (self.__participation - 1) * OC2.compute_rho(),
-            "vega": OC1.compute_vega()
-            + (self.__participation - 1) * OC2.compute_vega(),
+            "delta": 1 + (1 - self.__participation) * atm_call.compute_delta(),
+            "gamma": (1 - self.__participation) * atm_call.compute_gamma(),
+            "theta": (1 - self.__participation) * atm_call.compute_theta(),
+            "rho": (1 - self.__participation) * atm_call.compute_rho(),
+            "vega": (1 - self.__participation) * atm_call.compute_vega(),
         }
