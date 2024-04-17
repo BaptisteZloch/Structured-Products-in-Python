@@ -170,7 +170,7 @@ def show_option_pricing():
 
     opt_type = st.selectbox("Option Type", ["call", "put"])
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
         if st.button("Price"):
@@ -216,12 +216,6 @@ def show_option_pricing():
 
                 st.success(f"Greeks : {show_greeks(res)}")
 
-    with col3:
-        if st.button("Proba d'exercice"):
-            with st.spinner("Calculating..."):
-                time.sleep(2)
-                st.success("Pobabilité : 0.5")
-
 
 def show_fixed_income_pricing():
     st.title("Pricing des Produits à Revenu Fixe")
@@ -249,7 +243,7 @@ def show_fixed_income_pricing():
         coupon_rate = 0
         nb_coupon = 0
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
         if st.button("Price"):
@@ -285,12 +279,6 @@ def show_fixed_income_pricing():
                 res = post(url=f"{URL}/api/v1/price/bond/{dict_option[option_type]}", data=json.dumps(data)).json()
 
                 st.success(f"Greeks : {show_greeks(res)}")
-
-    with col3:
-        if st.button("Proba d'exercice"):
-            with st.spinner("Calculating..."):
-                time.sleep(2)
-                st.success("Pobabilité : 0.5")
 
 
 def show_strat_product_pricing():
@@ -336,7 +324,7 @@ def show_strat_product_pricing():
         lower_strike = st.number_input("Lower Strike", value=90.0)
         upper_strike = st.number_input("Upper Strike", value=110.0)
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
         if st.button("Price"):
@@ -394,12 +382,6 @@ def show_strat_product_pricing():
 
                 st.success(f"Greeks : {show_greeks(res)}")
 
-    with col3:
-        if st.button("Proba d'exercice"):
-            with st.spinner("Calculating..."):
-                time.sleep(2)
-                st.success("Pobabilité : 0.5")
-
 
 def show_struct_product_pricing():
     st.title("Pricing des Produits Structurés")
@@ -407,7 +389,6 @@ def show_struct_product_pricing():
 
     spot_price = st.number_input("Spot Price", value=100.0)
     dividend = st.number_input("Dividend", value=0.05)
-    strike_price = st.number_input("Strike Price", value=100.0)
 
     maturity_date = st.date_input("Maturity", max_value=datetime.today() + timedelta(days=365 * 100), format="DD/MM/YYYY")
     maturity_datetime = datetime.combine(maturity_date, datetime.min.time())
@@ -415,8 +396,7 @@ def show_struct_product_pricing():
     maturity = Maturity(start_date=today, end_date=maturity_datetime).maturity_in_years
 
     if option_type == "Reverse Convertible":
-        nominal = st.number_input("Nominal", value=100)
-        converse_rate = st.number_input("Converse Rate", value=0.02)
+        coupon = st.number_input("Coupon", value=0.02)
         foreign_rate, foreign_rate_curve, participation = 0, 0, 0
     else:
         foreign_rate_choice = st.selectbox("Foreign Rate Input", ["Single Value", "Rate Curve"])
@@ -429,7 +409,7 @@ def show_struct_product_pricing():
             foreign_rate = 0
 
         participation = st.number_input("Participation", value=1.2)
-        nominal, converse_rate = 0, 0
+        coupon = 0
 
     rate_choice = st.selectbox("Rate Input", ["Single Value", "Rate Curve"])
     if rate_choice == "Single Value":
@@ -450,7 +430,7 @@ def show_struct_product_pricing():
         volatility_surface = collect_volatility_data()
         volatility = 0
 
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
 
     with col1:
         if st.button("Price"):
@@ -463,10 +443,9 @@ def show_struct_product_pricing():
                     "spot_price": spot_price,
                     "maturity": maturity,
                     "dividend": dividend,
-                    "strike_price": strike_price,
                     **({"volatility": volatility} if volatility_choice == "Single Value" else {"volatility_surface": volatility_surface}),
                     **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
-                    **({"nominal": nominal, "converse_rate": converse_rate} if option_type == "Reverse Convertible" else {"participation": participation, **({"foreign_rate": foreign_rate} if foreign_rate_choice == "Single Value" else {"foreign_rate_curve": foreign_rate_curve})})
+                    **({"coupon": coupon} if option_type == "Reverse Convertible" else {"participation": participation, **({"foreign_rate": foreign_rate} if foreign_rate_choice == "Single Value" else {"foreign_rate_curve": foreign_rate_curve})})
                 }
 
                 res = post(url=f"{URL}/api/v1/price/structured-product/{dict_option[option_type]}", data=json.dumps(data)).json()
@@ -485,27 +464,19 @@ def show_struct_product_pricing():
                     "spot_price": spot_price,
                     "maturity": maturity,
                     "dividend": dividend,
-                    "strike_price": strike_price,
                     **({"volatility": volatility} if volatility_choice == "Single Value" else {
                         "volatility_surface": volatility_surface}),
                     **({"rate": rate} if rate_choice == "Single Value" else {"rate_curve": rate_curve}),
-                    **({"nominal": nominal,
-                        "converse_rate": converse_rate} if option_type == "Reverse Convertible" else {
-                        "participation": participation, **(
-                            {"foreign_rate": foreign_rate} if foreign_rate_choice == "Single Value" else {
-                                "foreign_rate_curve": foreign_rate_curve})})
+                    **({"coupon": coupon} if option_type == "Reverse Convertible" else {"participation": participation,
+                                                                                        **({
+                                                                                               "foreign_rate": foreign_rate} if foreign_rate_choice == "Single Value" else {
+                                                                                            "foreign_rate_curve": foreign_rate_curve})})
                 }
 
                 res = post(url=f"{URL}/api/v1/price/structured-product/{dict_option[option_type]}",
                            data=json.dumps(data)).json()
 
                 st.success(f"Greeks : {show_greeks(res)}")
-
-    with col3:
-        if st.button("Proba d'exercice"):
-            with st.spinner("Calculating..."):
-                time.sleep(2)
-                st.success("Pobabilité : 0.5")
 
 
 def main():
