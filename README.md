@@ -25,3 +25,6 @@ https://structured-pricing-api-dauphine.koyeb.app/docs
 # Access App
 The App is available here (it is directly connected to the API) :
 https://sp-app-in-python.streamlit.app/
+
+# Description 
+The main part of the code (the API is available in src/main_backend.py). The whole project is dockerized in order to facilitate the deployment in the cloud.
