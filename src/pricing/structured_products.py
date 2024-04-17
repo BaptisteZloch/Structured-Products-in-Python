@@ -76,6 +76,9 @@ class OutperformerCertificate(StructuredProductBase):
         dividend: Optional[float] = None,
     ) -> None:
         super().__init__("outperformer-certificate")
+        if participation <= 1.0:
+            raise ValueError("Participation must be greater than 100% (1.0 in decimal form).")
+        
         self.__rate = rate
         self.__maturity = maturity
         self.__spot_price = spot_price
@@ -86,13 +89,14 @@ class OutperformerCertificate(StructuredProductBase):
     def compute_price(self) -> float:
         atm_call = VanillaOption(
             self.__spot_price,
-            self.__spot_price,  
+            self.__spot_price, 
             self.__maturity,
             self.__rate,
             self.__volatility,
             "call",
             self.__dividend,
         )
+
         return self.__spot_price + (1 - self.__participation) * atm_call.compute_price()
 
     def compute_greeks(self, eps: Optional[float] = 0.01) -> Dict[str, float]:
@@ -105,6 +109,7 @@ class OutperformerCertificate(StructuredProductBase):
             "call",
             self.__dividend,
         )
+
         return {
             "delta": 1 + (1 - self.__participation) * atm_call.compute_delta(),
             "gamma": (1 - self.__participation) * atm_call.compute_gamma(),
